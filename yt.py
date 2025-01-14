@@ -13,12 +13,15 @@ import re
 # Set up basic logging
 logging.basicConfig(level=logging.DEBUG)
 
+# Load environment variables
 load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
+# Initialize the bot
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 
-DOWNLOAD_PATH = "downloads/"
+# Define the download path based on Railway's persistent storage volume
+DOWNLOAD_PATH = "/app/downloads/"
 if not os.path.exists(DOWNLOAD_PATH):
     os.makedirs(DOWNLOAD_PATH)
 
@@ -79,7 +82,10 @@ def handle_link(message):
 
 def handle_youtube_video(url, message):
     try:
-        ydl_opts = {'noplaylist': True}
+        ydl_opts = {
+            'noplaylist': True,
+            'cookies': 'cookies.txt'  # Add the path to your cookies file
+        }
 
         if 'youtube.com' in url:
             url_parts = urllib.parse.urlparse(url)
@@ -118,7 +124,7 @@ def handle_youtube_video(url, message):
     except Exception as e:
         logging.error(f"Error fetching video qualities: {e}")
         bot.reply_to(message, f"Failed to fetch video qualities. Error: {e}")
-        
+
 def handle_dailymotion_video(url, message):
     try:
         ydl_opts = {'quiet': True, 'noplaylist': True, 'force_generic_extractor': True}
@@ -342,4 +348,5 @@ def process_file(unique_filepath, file_size, file_name, call):
         bot.send_message(call.message.chat.id, "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes.")
         threading.Thread(target=delete_file_after_delay, args=(unique_filepath, call.message.chat.id)).start()
 
+# Start polling
 bot.polling()
