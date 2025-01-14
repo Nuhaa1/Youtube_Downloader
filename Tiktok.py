@@ -6,27 +6,17 @@ import urllib.parse
 import logging
 import threading
 import time
-from dotenv import load_dotenv
 from requests.exceptions import ConnectionError, SSLError
 import re
 
 # Set up basic logging
 logging.basicConfig(level=logging.DEBUG)
 
-# Load environment variables
-load_dotenv()
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+bot = telebot.TeleBot('7615071981:AAFohL0Rb10_U2fALN1t8ns5vPMI5d6sEA0')
 
-# Initialize the bot
-bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
-
-# Define the download path based on Railway's persistent storage volume
-DOWNLOAD_PATH = "/app/downloads/"
+DOWNLOAD_PATH = "downloads/"
 if not os.path.exists(DOWNLOAD_PATH):
     os.makedirs(DOWNLOAD_PATH)
-
-# Path to your cookies file in Railway project
-COOKIES_PATH = "/app/cookies.txt"
 
 TELEGRAM_UPLOAD_LIMIT = 50 * 1024 * 1024  # 50 MB
 
@@ -85,10 +75,7 @@ def handle_link(message):
 
 def handle_youtube_video(url, message):
     try:
-        ydl_opts = {
-            'noplaylist': True,
-            'cookies': COOKIES_PATH  # Add the path to your cookies file
-        }
+        ydl_opts = {'noplaylist': True}
 
         if 'youtube.com' in url:
             url_parts = urllib.parse.urlparse(url)
@@ -111,11 +98,10 @@ def handle_youtube_video(url, message):
                 if f['vcodec'] != 'none':
                     quality = str(f.get('format_note'))
                     format_id = f['format_id']
-                    if quality and quality.lower() != 'none' and quality.strip():  # Ensure no empty or 'none' values
-                        if quality not in quality_set:
-                            quality_set.add(quality)
-                            callback_data = f'{format_id}|{video_id}|{quality}|youtube'
-                            keyboard.add(InlineKeyboardButton(text=quality, callback_data=callback_data))
+                    if quality not in quality_set:
+                        quality_set.add(quality)
+                        callback_data = f'{format_id}|{video_id}|{quality}|youtube'
+                        keyboard.add(InlineKeyboardButton(text=quality, callback_data=callback_data))
             # Add MP3 option
             callback_data = f'mp3|{video_id}|mp3|youtube'
             keyboard.add(InlineKeyboardButton(text="MP3", callback_data=callback_data))
@@ -127,7 +113,7 @@ def handle_youtube_video(url, message):
     except Exception as e:
         logging.error(f"Error fetching video qualities: {e}")
         bot.reply_to(message, f"Failed to fetch video qualities. Error: {e}")
-
+        
 def handle_dailymotion_video(url, message):
     try:
         ydl_opts = {'quiet': True, 'noplaylist': True, 'force_generic_extractor': True}
@@ -189,8 +175,8 @@ def handle_tiktok_video(url, message):
                         bot.send_message(message.chat.id, "Failed to upload video after multiple attempts.")
                 else:
                     encoded_file_name = urllib.parse.quote(file_name)
-                    download_link = f"https://<your-railway-domain>/downloads/{encoded_file_name}"
-                    bot.send_message(call.message.chat.id, f"The file is too large to upload to Telegram. You can download it here:\n{download_link}")
+                    download_link = f"http://192.168.0.111:5000/downloads/{encoded_file_name}"
+                    bot.send_message(message.chat.id, f"The file is too large to upload to Telegram. You can download it here:\n{download_link}")
 
                     bot.send_message(message.chat.id, "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes.")
                     threading.Thread(target=delete_file_after_delay, args=(unique_filepath, message.chat.id)).start()
@@ -234,7 +220,6 @@ def handle_quality_callback(call):
                     'preferredquality': '192',
                 }],
                 'noplaylist': True,
-                'cookies': COOKIES_PATH  # Add the path to your cookies file
             }
 
             with YoutubeDL(ydl_opts) as ydl:
@@ -267,7 +252,6 @@ def handle_quality_callback(call):
                 'outtmpl': os.path.join(DOWNLOAD_PATH, '%(title)s_%(format_id)s.%(ext)s'),
                 'noplaylist': True,
                 'merge_output_format': 'mp4',
-                'cookies': COOKIES_PATH  # Add the path to your cookies file
             }
 
             with YoutubeDL(ydl_opts) as ydl:
@@ -353,5 +337,4 @@ def process_file(unique_filepath, file_size, file_name, call):
         bot.send_message(call.message.chat.id, "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes.")
         threading.Thread(target=delete_file_after_delay, args=(unique_filepath, call.message.chat.id)).start()
 
-# Start polling
 bot.polling()

@@ -11,13 +11,11 @@ WORKDIR /app
 # Copy the project files
 COPY . /app
 
-# Create a virtual environment and install dependencies
-RUN python -m venv /opt/venv \
-    && . /opt/venv/bin/activate \
-    && pip install --no-cache-dir -r requirements.txt
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Ensure the virtual environment is activated
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Command to run the app
-CMD ["python", "yt.py"]
+CMD ["python", "app.py"]
