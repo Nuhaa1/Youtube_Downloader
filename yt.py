@@ -25,6 +25,9 @@ DOWNLOAD_PATH = "/app/downloads/"
 if not os.path.exists(DOWNLOAD_PATH):
     os.makedirs(DOWNLOAD_PATH)
 
+# Path to your cookies file in Railway project
+COOKIES_PATH = "/app/cookies.txt"
+
 TELEGRAM_UPLOAD_LIMIT = 50 * 1024 * 1024  # 50 MB
 
 def delete_file_after_delay(file_path, chat_id):
@@ -84,7 +87,7 @@ def handle_youtube_video(url, message):
     try:
         ydl_opts = {
             'noplaylist': True,
-            'cookies': 'cookies.txt'  # Add the path to your cookies file
+            'cookies': COOKIES_PATH  # Add the path to your cookies file
         }
 
         if 'youtube.com' in url:
@@ -231,7 +234,7 @@ def handle_quality_callback(call):
                     'preferredquality': '192',
                 }],
                 'noplaylist': True,
-                'cookies': 'cookies.txt'  # Add the path to your cookies file
+                'cookies': COOKIES_PATH  # Add the path to your cookies file
             }
 
             with YoutubeDL(ydl_opts) as ydl:
@@ -264,7 +267,7 @@ def handle_quality_callback(call):
                 'outtmpl': os.path.join(DOWNLOAD_PATH, '%(title)s_%(format_id)s.%(ext)s'),
                 'noplaylist': True,
                 'merge_output_format': 'mp4',
-                'cookies': 'cookies.txt'  # Add the path to your cookies file
+                'cookies': COOKIES_PATH  # Add the path to your cookies file
             }
 
             with YoutubeDL(ydl_opts) as ydl:
