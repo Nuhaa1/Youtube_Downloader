@@ -6,13 +6,15 @@ import urllib.parse
 import logging
 import threading
 import time
+from dotenv import load_dotenv
 from requests.exceptions import ConnectionError, SSLError
 import re
 
 # Set up basic logging
 logging.basicConfig(level=logging.DEBUG)
 
-bot = telebot.TeleBot('7615071981:AAFohL0Rb10_U2fALN1t8ns5vPMI5d6sEA0')
+load_dotenv()
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 DOWNLOAD_PATH = "downloads/"
 if not os.path.exists(DOWNLOAD_PATH):
