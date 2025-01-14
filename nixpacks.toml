@@ -1,2 +1,2 @@
-[pkgs] 
-ffmpeg = "4.4" 
+[phases.setup]
+nixPkgs = ['ffmpeg']
