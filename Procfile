@@ -1,1 +1,2 @@
-worker: python yt.py 
+web: python server.py
+worker: python yt.py
