@@ -189,7 +189,7 @@ def handle_tiktok_video(url, message):
                         bot.send_message(message.chat.id, "Failed to upload video after multiple attempts.")
                 else:
                     encoded_file_name = urllib.parse.quote(file_name)
-                    download_link = f"https://<your-railway-domain>/downloads/{encoded_file_name}"
+                    download_link = f"https://worker-production-8c43.up.railway.app/downloads/{encoded_file_name}"
                     bot.send_message(call.message.chat.id, f"The file is too large to upload to Telegram. You can download it here:\n{download_link}")
 
                     bot.send_message(message.chat.id, "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes.")
