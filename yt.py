@@ -231,6 +231,7 @@ def handle_quality_callback(call):
                     'preferredquality': '192',
                 }],
                 'noplaylist': True,
+                'cookies': 'cookies.txt'  # Add the path to your cookies file
             }
 
             with YoutubeDL(ydl_opts) as ydl:
@@ -263,6 +264,7 @@ def handle_quality_callback(call):
                 'outtmpl': os.path.join(DOWNLOAD_PATH, '%(title)s_%(format_id)s.%(ext)s'),
                 'noplaylist': True,
                 'merge_output_format': 'mp4',
+                'cookies': 'cookies.txt'  # Add the path to your cookies file
             }
 
             with YoutubeDL(ydl_opts) as ydl:
