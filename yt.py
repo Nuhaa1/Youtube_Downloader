@@ -16,6 +16,8 @@ logging.basicConfig(level=logging.DEBUG)
 load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
+bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
+
 DOWNLOAD_PATH = "downloads/"
 if not os.path.exists(DOWNLOAD_PATH):
     os.makedirs(DOWNLOAD_PATH)
