@@ -9,10 +9,11 @@ import urllib.parse
 import threading
 import time
 from dotenv import load_dotenv
-from database import connect_db, create_user_downloads_table, get_download_count, increment_download_count, reset_database
+from database import connect_db, ensure_user_in_db, create_user_downloads_table, get_download_count, increment_download_count, reset_database
 from requests.exceptions import ConnectionError, SSLError
 import re
 from flask import Flask, jsonify, request, send_from_directory
+from datetime import datetime
 
 # Set up basic logging
 logging.basicConfig(level=logging.DEBUG)
