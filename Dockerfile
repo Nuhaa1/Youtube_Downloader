@@ -18,5 +18,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Expose the port (the same port used in Gunicorn)
 EXPOSE 5000
 
-# Use gunicorn to serve the app (matches the Procfile configuration)
-CMD ["gunicorn", "server:app", "--bind", "0.0.0.0:$PORT"]
+# Use a CMD command to create the entrypoint.sh script on the fly
+CMD sh -c 'echo "#!/bin/sh\nexec gunicorn server:app --bind 0.0.0.0:\$PORT" > /app/entrypoint.sh && chmod +x /app/entrypoint.sh && /app/entrypoint.sh'
