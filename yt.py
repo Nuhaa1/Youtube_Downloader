@@ -262,9 +262,9 @@ def get_download_link(file_name, resolution, user_id):
 def handle_download_command(message):
     user_id = message.chat.id
     video_url = message.text.split(' ')[1]  # Assuming the format is /download <video_url>
-    resolution = "1080p"  # You can set resolution dynamically based on user input
+    resolution = "1080p"  # Set resolution based on user input or default to 1080p
 
-    # Process the video URL to get the actual file name using yt-dlp
+    # Download the video and get the actual file name using yt-dlp
     ydl_opts = {
         'format': f'bestvideo[height<={resolution}]+bestaudio/best',
         'outtmpl': f'{DOWNLOAD_PATH}%(title)s.%(ext)s',
@@ -278,9 +278,8 @@ def handle_download_command(message):
 
     bot.send_message(user_id, f"Here is your download link: {download_link}")
 
-
-def send_download_button(chat_id, file_name):
-    original_download_link = get_download_link(file_name)
+def send_download_button(chat_id, file_name, resolution, user_id):
+    original_download_link = get_download_link(file_name, resolution, user_id)
     short_download_link = shorten_url(original_download_link)
     
     keyboard = InlineKeyboardMarkup()
