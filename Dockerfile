@@ -19,6 +19,9 @@ RUN pip install python-dotenv
 RUN pip install Flask==2.2.5
 RUN pip install gunicorn==22.0.0
 
+# Install ffmpeg
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+
 # Expose the port
 EXPOSE 80
 
