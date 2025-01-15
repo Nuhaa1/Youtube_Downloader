@@ -418,7 +418,7 @@ def download_video(url, quality, source):
             'format': quality,
             'outtmpl': os.path.join(DOWNLOAD_PATH, '%(title)s.%(ext)s'),
             'noplaylist': True,
-            'cookies': COOKIES_PATH  # Add the path to your cookies file
+            'cookies': COOKIES_PATH  # Ensure the path to the cookies file is correct
         }
 
         with YoutubeDL(ydl_opts) as ydl:
