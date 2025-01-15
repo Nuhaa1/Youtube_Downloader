@@ -399,9 +399,16 @@ def sanitize_and_encode_filename(filename):
     encoded_filename = urllib.parse.quote(sanitized_filename)
     return encoded_filename
 
+def setup_database():
+    conn = connect_db()
+    create_user_downloads_table(conn)
+
+# Call this function at the start of your script
+setup_database()
+
 def process_file(unique_filepath, file_size, file_name, call):
     user_id = call.message.chat.id
-    conn = connect_db()  # Establish a database connection
+    conn = connect_db()  # Ensure you establish a database connection
     
     if get_download_count(conn, user_id) >= 2:
         bot.send_message(user_id, "You have reached your download limit of 2 per day. Please try again tomorrow.")
