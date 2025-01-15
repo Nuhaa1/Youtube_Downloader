@@ -545,14 +545,6 @@ def download():
         logging.error(f"Error downloading video: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
-@app.route('/downloads/<path:filename>')
-def download_file(filename):
-    try:
-        decoded_filename = urllib.parse.unquote(filename)
-        return send_from_directory(DOWNLOAD_PATH, decoded_filename, as_attachment=True)
-    except FileNotFoundError:
-        return jsonify({"error": "File not found"}), 404
-
 # Flask helper functions
 def download_video(url, quality, source):
     try:
