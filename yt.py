@@ -224,25 +224,21 @@ def handle_youtube_video(url, message):
         bot.reply_to(message, f"Failed to fetch video qualities. Error: {e}")
 
 def get_download_link(file_name, resolution, user_id):
-    # Update download count for the user
     conn = connect_db()
+    ensure_user_in_db(conn, user_id)  # Ensure user exists in the database
     download_count = get_download_count(conn, user_id)
 
-    # Directly use Adtival for 2K (1440p) and 4K (2160p) resolutions
     if resolution in ["1440p", "2160p"]:
         encoded_file_name = urllib.parse.quote(file_name)
         long_url = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
         download_link = shorten_url(long_url)
-    # No Adtival for the first 1080p download
     elif resolution == "1080p" and download_count == 0:
         encoded_file_name = urllib.parse.quote(file_name)
         download_link = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
-    # Apply Adtival for the second and subsequent 1080p downloads
     elif resolution == "1080p":
         encoded_file_name = urllib.parse.quote(file_name)
         long_url = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
         download_link = shorten_url(long_url)
-    # For other resolutions, the first two downloads are free, then use Adtival
     else:
         if download_count < 2:
             encoded_file_name = urllib.parse.quote(file_name)
@@ -252,7 +248,6 @@ def get_download_link(file_name, resolution, user_id):
             long_url = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
             download_link = shorten_url(long_url)
 
-    # Increment the download count for the user
     increment_download_count(conn, user_id)
     conn.close()
 
@@ -264,6 +259,9 @@ def handle_download_command(message):
     video_url = message.text.split(' ')[1]  # Assuming the format is /download <video_url>
     resolution = "1080p"  # Set resolution based on user input or default to 1080p
 
+    conn = connect_db()
+    ensure_user_in_db(conn, user_id)  # Ensure user exists in the database
+    
     # Download the video and get the actual file name using yt-dlp
     ydl_opts = {
         'format': f'bestvideo[height<={resolution}]+bestaudio/best',
@@ -277,6 +275,7 @@ def handle_download_command(message):
     download_link = get_download_link(file_name, resolution, user_id)
 
     bot.send_message(user_id, f"Here is your download link: {download_link}")
+    conn.close()  # Close the database connection
 
 def send_download_button(chat_id, file_name, resolution, user_id):
     original_download_link = get_download_link(file_name, resolution, user_id)
@@ -536,9 +535,7 @@ def process_file(unique_filepath, file_size, file_name, call):
                 bot.send_message(call.message.chat.id, "Failed to upload video after multiple attempts.")
         else:
             send_download_button(call.message.chat.id, file_name, resolution, user_id)
-            bot.send_message(call.message.chat.id, "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes to keep the server clean and efficient.")
             threading.Thread(target=delete_file_after_delay, args=(unique_filepath, call.message.chat.id)).start()
-            increment_download_count(conn, user_id)
     else:
         # Require verification after two downloads
         verification_url = get_verification_url(file_name)  # Use sanitized filename

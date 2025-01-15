@@ -30,6 +30,11 @@ def create_user_downloads_table(conn):
     ''')
     conn.commit()
 
+def ensure_user_in_db(conn, user_id):
+    cursor = conn.cursor()
+    cursor.execute("INSERT OR IGNORE INTO user_downloads (user_id, download_count, last_download_date) VALUES (%s, %s, %s)", (user_id, 0, datetime.now().date()))
+    conn.commit()
+
 def reset_database():
     try:
         conn = connect_db()
