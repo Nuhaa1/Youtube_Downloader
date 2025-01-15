@@ -6,11 +6,10 @@ import requests
 import json
 import logging
 import urllib.parse
-import logging
 import threading
 import time
 from dotenv import load_dotenv
-from database import get_download_count, increment_download_count
+from database import connect_db, get_download_count, increment_download_count
 from requests.exceptions import ConnectionError, SSLError
 import re
 from flask import Flask, jsonify, request, send_from_directory
