@@ -226,31 +226,39 @@ def handle_youtube_video(url, message):
 
 def get_download_link(file_name, resolution, user_id):
     conn = connect_db()
+    logging.info(f"Entered get_download_link for user {user_id}, resolution {resolution}")
     ensure_user_in_db(conn, user_id)  # Ensure user exists in the database
     download_count = get_download_count(conn, user_id)
+    logging.info(f"User {user_id} has download count {download_count}")
 
     if resolution in ["1440p", "2160p"]:
+        logging.info("Resolution is 1440p or 2160p, using Adtival")
         encoded_file_name = urllib.parse.quote(file_name)
         long_url = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
         download_link = shorten_url(long_url)
     elif resolution == "1080p" and download_count == 0:
+        logging.info("First 1080p download, not using Adtival")
         encoded_file_name = urllib.parse.quote(file_name)
         download_link = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
     elif resolution == "1080p":
+        logging.info("Subsequent 1080p download, using Adtival")
         encoded_file_name = urllib.parse.quote(file_name)
         long_url = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
         download_link = shorten_url(long_url)
     else:
         if download_count < 2:
+            logging.info("First two downloads for other resolutions, not using Adtival")
             encoded_file_name = urllib.parse.quote(file_name)
             download_link = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
         else:
+            logging.info("Subsequent downloads for other resolutions, using Adtival")
             encoded_file_name = urllib.parse.quote(file_name)
             long_url = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
             download_link = shorten_url(long_url)
 
     increment_download_count(conn, user_id)
     conn.close()
+    logging.info(f"Generated download link: {download_link}")
 
     return download_link
 
@@ -280,12 +288,12 @@ def handle_download_command(message):
 
 def send_download_button(chat_id, file_name, resolution, user_id):
     original_download_link = get_download_link(file_name, resolution, user_id)
-    short_download_link = shorten_url(original_download_link)
-    
+    logging.info(f"Generated download link: {original_download_link}")
+
     keyboard = InlineKeyboardMarkup()
-    download_button = InlineKeyboardButton(text="Download", url=short_download_link)
+    download_button = InlineKeyboardButton(text="Download", url=original_download_link)
     keyboard.add(download_button)
-    
+
     bot.send_message(chat_id, (
         "The file is too large to upload to Telegram because the Telegram bot has a 50 MB upload limit. "
         "You can download it using the button below.\n\n"
