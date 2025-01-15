@@ -2,6 +2,7 @@ import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from yt_dlp import YoutubeDL
 import os
+import requests
 import urllib.parse
 import logging
 import threading
@@ -39,6 +40,17 @@ def delete_file_after_delay(file_path, chat_id):
             logging.error(f"File not found: {file_path} - could not delete")
     except Exception as e:
         logging.error(f"Error deleting file: {file_path}, Error: {e}")
+
+def shorten_url(long_url):
+    api_token = '2def3581e95ab748dd52fc12a0852c33a6a9f743'
+    api_url = f"https://www.adtival.network/api?api={api_token}&url={long_url}&format=text"
+    
+    response = requests.get(api_url)
+    if response.status_code == 200:
+        return response.text.strip()
+    else:
+        logging.error(f"Error shortening URL: {response.status_code}")
+        return long_url  # Fallback to the original URL if there's an error
 
 def get_unique_filepath(base_filepath, ext):
     counter = 1
@@ -145,9 +157,11 @@ def get_download_link(file_name):
     return download_link
 
 def send_download_button(chat_id, file_name):
-    download_link = get_download_link(file_name)
+    original_download_link = get_download_link(file_name)
+    short_download_link = shorten_url(original_download_link)
+    
     keyboard = InlineKeyboardMarkup()
-    download_button = InlineKeyboardButton(text="Download", url=download_link)
+    download_button = InlineKeyboardButton(text="Download", url=short_download_link)
     keyboard.add(download_button)
     
     bot.send_message(chat_id, (
@@ -339,13 +353,13 @@ def process_audio(unique_filepath, file_size, file_name, call):
                 logging.error("Failed to upload audio after multiple attempts")
                 bot.send_message(call.message.chat.id, "Failed to upload audio after multiple attempts.")
         else:
-            encoded_file_name = urllib.parse.quote(file_name)
-            download_link = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
+            original_download_link = get_download_link(file_name)
+            short_download_link = shorten_url(original_download_link)
             bot.send_message(call.message.chat.id, (
                 "The file is too large to upload to Telegram because the Telegram bot has a 50 MB upload limit. "
                 "You can download it using the link below.\n\n"
-                "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes to keep the server clean and efficient.\n"
-                f"{download_link}"
+                f"{short_download_link}\n\n"
+                "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes to keep the server clean and efficient."
             ))
             threading.Thread(target=delete_file_after_delay, args=(unique_filepath, call.message.chat.id)).start()
     else:
