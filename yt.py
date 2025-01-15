@@ -10,6 +10,7 @@ import logging
 import threading
 import time
 from dotenv import load_dotenv
+from database import get_download_count, increment_download_count
 from requests.exceptions import ConnectionError, SSLError
 import re
 from flask import Flask, jsonify, request, send_from_directory
@@ -45,7 +46,7 @@ def delete_file_after_delay(file_path, chat_id):
 
 # Define the URL shortening function
 def shorten_url(long_url):
-    api_token = '2def3581e95ab748dd52fc12a0852c33a6a9f743'
+    api_token = os.getenv('ADTIVAL_API_TOKEN')
     api_url = f"https://www.adtival.network/api?api={api_token}&url={long_url}&format=json"
     
     response = requests.get(api_url)
@@ -400,17 +401,26 @@ def sanitize_and_encode_filename(filename):
     return encoded_filename
 
 def process_file(unique_filepath, file_size, file_name, call):
+    user_id = call.message.chat.id
+    
+    if get_download_count(user_id) >= 2:
+        bot.send_message(user_id, "You have reached your download limit of 2 per day. Please try again tomorrow.")
+        return
+    
     file_name = sanitize_and_encode_filename(file_name)
     if file_size <= TELEGRAM_UPLOAD_LIMIT:
         if send_video_with_retries(unique_filepath, call.message.chat.id):
             os.remove(unique_filepath)
             logging.debug(f"Deleted file after upload: {unique_filepath}")
+            increment_download_count(user_id)
         else:
             logging.error("Failed to upload video after multiple attempts")
             bot.send_message(call.message.chat.id, "Failed to upload video after multiple attempts.")
     else:
         send_download_button(call.message.chat.id, file_name)
+        bot.send_message(call.message.chat.id, "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes to keep the server clean and efficient.")
         threading.Thread(target=delete_file_after_delay, args=(unique_filepath, call.message.chat.id)).start()
+        increment_download_count(user_id)
 
 def send_video_with_retries(file_path, chat_id, retries=3):
     for attempt in range(retries):
