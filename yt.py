@@ -109,12 +109,11 @@ def handle_youtube_video(url, message):
                 if f['vcodec'] != 'none':
                     quality = str(f.get('format_note'))
                     format_id = f['format_id']
-                    if quality and quality.lower() != 'none' and quality.strip():  # Ensure no empty or 'none' values
+                    if quality and quality.lower() != 'none' and quality.strip():
                         if quality not in quality_set:
                             quality_set.add(quality)
                             callback_data = f'{format_id}|{video_id}|{quality}|youtube'
                             keyboard.add(InlineKeyboardButton(text=quality, callback_data=callback_data))
-            # Add MP3 option
             callback_data = f'mp3|{video_id}|mp3|youtube'
             keyboard.add(InlineKeyboardButton(text="MP3", callback_data=callback_data))
 
