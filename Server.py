@@ -1,17 +1,10 @@
-import os
-from flask import Flask, send_from_directory
+from flask import Flask
 
 app = Flask(__name__)
-DOWNLOAD_PATH = "downloads/"
 
 @app.route('/test')
 def test():
-    return "Test route working!"
-
-@app.route('/downloads/<filename>')
-def download_file(filename):
-    return send_from_directory(DOWNLOAD_PATH, filename)
+    return "Minimal test route working!"
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=5000)
