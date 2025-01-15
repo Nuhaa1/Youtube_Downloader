@@ -12,7 +12,6 @@ def connect_db():
     )
     return conn
 
-# Define functions to manage download counts
 def reset_download_count(conn, user_id):
     cursor = conn.cursor()
     cursor.execute('''

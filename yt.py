@@ -402,8 +402,9 @@ def sanitize_and_encode_filename(filename):
 
 def process_file(unique_filepath, file_size, file_name, call):
     user_id = call.message.chat.id
+    conn = connect_db()  # Ensure you establish a database connection
     
-    if get_download_count(user_id) >= 2:
+    if get_download_count(conn, user_id) >= 2:
         bot.send_message(user_id, "You have reached your download limit of 2 per day. Please try again tomorrow.")
         return
     
@@ -412,7 +413,7 @@ def process_file(unique_filepath, file_size, file_name, call):
         if send_video_with_retries(unique_filepath, call.message.chat.id):
             os.remove(unique_filepath)
             logging.debug(f"Deleted file after upload: {unique_filepath}")
-            increment_download_count(user_id)
+            increment_download_count(conn, user_id)
         else:
             logging.error("Failed to upload video after multiple attempts")
             bot.send_message(call.message.chat.id, "Failed to upload video after multiple attempts.")
@@ -420,7 +421,7 @@ def process_file(unique_filepath, file_size, file_name, call):
         send_download_button(call.message.chat.id, file_name)
         bot.send_message(call.message.chat.id, "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes to keep the server clean and efficient.")
         threading.Thread(target=delete_file_after_delay, args=(unique_filepath, call.message.chat.id)).start()
-        increment_download_count(user_id)
+        increment_download_count(conn, user_id)
 
 def send_video_with_retries(file_path, chat_id, retries=3):
     for attempt in range(retries):
