@@ -87,10 +87,11 @@ def get_download_count(conn, user_id):
 
 def increment_download_count(conn, user_id):
     cursor = conn.cursor()
-    cursor.execute('''
-    UPDATE user_downloads
-    SET download_count = download_count + 1,
-        last_download_date = %s
-    WHERE user_id = %s
-    ''', (datetime.now().date(), user_id))
+    cursor.execute("""
+        UPDATE user_downloads
+        SET download_count = download_count + 1,
+            last_download_date = %s
+        WHERE user_id = %s
+    """, (datetime.now().date(), user_id))
     conn.commit()
+
