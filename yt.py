@@ -127,6 +127,7 @@ def send_welcome(message):
     
     bot.send_message(message.chat.id, welcome_message)
 
+# Telegram Bot Command for Resetting Database
 @bot.message_handler(commands=['reset'])
 def reset_database_command(message):
     user_id = message.chat.id
@@ -138,6 +139,18 @@ def reset_database_command(message):
     else:
         bot.send_message(user_id, "You don't have the required permissions to reset the database.")
 
+# Flask Route for Downloading Files
+@app.route('/downloads/<path:filename>')
+def download_file(filename):
+    try:
+        decoded_filename = urllib.parse.unquote(filename)
+        full_path = os.path.join(DOWNLOAD_PATH, decoded_filename)
+        print(f"Looking for file at: {full_path}")  # Debug statement
+        return send_from_directory(DOWNLOAD_PATH, decoded_filename, as_attachment=True)
+    except FileNotFoundError:
+        return jsonify({"error": "File not found"}), 404
+
+# Flask Route for Resetting Database
 @app.route('/reset', methods=['POST'])
 def reset_database_route():
     try:
