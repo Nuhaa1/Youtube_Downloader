@@ -234,7 +234,7 @@ def get_download_link(file_name, resolution, user_id):
         long_url = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
         download_link = shorten_url(long_url)
     # No Adtival for the first 1080p download
-    elif download_count == 0 and resolution == "1080p":
+    elif resolution == "1080p" and download_count == 0:
         encoded_file_name = urllib.parse.quote(file_name)
         download_link = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
     # Apply Adtival for the second and subsequent 1080p downloads
