@@ -19,6 +19,17 @@ def connect_db():
     )
     return conn
 
+def create_user_downloads_table(conn):
+    cursor = conn.cursor()
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS user_downloads (
+        user_id BIGINT PRIMARY KEY,
+        download_count INTEGER DEFAULT 0,
+        last_download_date DATE
+    );
+    ''')
+    conn.commit()
+
 def reset_download_count(conn, user_id):
     cursor = conn.cursor()
     cursor.execute('''
