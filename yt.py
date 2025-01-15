@@ -150,8 +150,11 @@ def send_download_button(chat_id, file_name):
     download_button = InlineKeyboardButton(text="Download", url=download_link)
     keyboard.add(download_button)
     
-    bot.send_message(chat_id, "The file is too large to upload to Telegram because the Telegram bot has a 50 MB upload limit. You can download it using the button below.", reply_markup=keyboard)
-    bot.send_message(chat_id, "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes to keep the server clean and efficient.")
+    bot.send_message(chat_id, (
+        "The file is too large to upload to Telegram because the Telegram bot has a 50 MB upload limit. "
+        "You can download it using the button below.\n\n"
+        "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes to keep the server clean and efficient."
+    ), reply_markup=keyboard)
 
 def handle_dailymotion_video(url, message):
     try:
@@ -214,8 +217,6 @@ def handle_tiktok_video(url, message):
                         bot.send_message(message.chat.id, "Failed to upload video after multiple attempts.")
                 else:
                     send_download_button(message.chat.id, file_name)
-                    bot.send_message(message.chat.id, "The file is too large to upload to Telegram because the Telegram bot has a 50 MB upload limit. You can download it using the button below.")
-                    bot.send_message(message.chat.id, "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes to keep the server clean and efficient.")
                     threading.Thread(target=delete_file_after_delay, args=(unique_filepath, message.chat.id)).start()
             else:
                 logging.error(f"File not found: {unique_filepath}")
@@ -340,8 +341,12 @@ def process_audio(unique_filepath, file_size, file_name, call):
         else:
             encoded_file_name = urllib.parse.quote(file_name)
             download_link = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
-            bot.send_message(call.message.chat.id, f"The file is too large to upload to Telegram because the Telegram bot has a 50 MB upload limit. You can download it here:\n{download_link}")
-            bot.send_message(call.message.chat.id, "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes to keep the server clean and efficient.")
+            bot.send_message(call.message.chat.id, (
+                "The file is too large to upload to Telegram because the Telegram bot has a 50 MB upload limit. "
+                "You can download it using the link below.\n\n"
+                "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes to keep the server clean and efficient.\n"
+                f"{download_link}"
+            ))
             threading.Thread(target=delete_file_after_delay, args=(unique_filepath, call.message.chat.id)).start()
     else:
         logging.error(f"File not found: {unique_filepath}")
@@ -375,8 +380,6 @@ def process_file(unique_filepath, file_size, file_name, call):
             bot.send_message(call.message.chat.id, "Failed to upload video after multiple attempts.")
     else:
         send_download_button(call.message.chat.id, file_name)
-        bot.send_message(call.message.chat.id, "The file is too large to upload to Telegram because the Telegram bot has a 50 MB upload limit. You can download it using the button below.")
-        bot.send_message(call.message.chat.id, "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes to keep the server clean and efficient.")
         threading.Thread(target=delete_file_after_delay, args=(unique_filepath, call.message.chat.id)).start()
 
 def send_video_with_retries(file_path, chat_id, retries=3):
