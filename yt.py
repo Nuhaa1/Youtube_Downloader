@@ -9,7 +9,7 @@ import time
 from dotenv import load_dotenv
 from requests.exceptions import ConnectionError, SSLError
 import re
-from flask import Flask, jsonify, request  # Import Flask components
+from flask import Flask, jsonify, request, send_from_directory
 
 # Set up basic logging
 logging.basicConfig(level=logging.DEBUG)
