@@ -1,10 +1,6 @@
 import psycopg2
 from datetime import datetime
 import os
-from flask import Flask, jsonify, request, send_from_directory
-import telebot
-import logging
-import urllib.parse
 
 # Load environment variables
 DB_HOST = os.getenv('PGHOST')
@@ -12,13 +8,6 @@ DB_NAME = os.getenv('PGDATABASE')
 DB_USER = os.getenv('PGUSER')
 DB_PASSWORD = os.getenv('POSTGRES_PASSWORD')
 DB_PORT = os.getenv('PGPORT')
-
-app = Flask(__name__)
-
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-admin_user_ids = [123456789, 987654321]
-
-bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 
 def connect_db():
     conn = psycopg2.connect(
@@ -96,28 +85,3 @@ def increment_download_count(conn, user_id):
     WHERE user_id = %s
     ''', (datetime.now().date(), user_id))
     conn.commit()
-
-@app.route('/reset', methods=['POST'])
-def reset_database_route():
-    try:
-        if reset_database():
-            return jsonify({"status": "success", "message": "Database has been reset successfully."}), 200
-        else:
-            return jsonify({"status": "error", "message": "Failed to reset the database."}), 500
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-@bot.message_handler(commands=['reset'])
-def reset_database_command(message):
-    user_id = message.chat.id
-    if user_id in admin_user_ids:
-        if reset_database():
-            bot.send_message(user_id, "Database has been reset successfully.")
-        else:
-            bot.send_message(user_id, "Failed to reset the database. Please try again later.")
-    else:
-        bot.send_message(user_id, "You don't have the required permissions to reset the database.")
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)

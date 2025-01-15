@@ -9,7 +9,7 @@ import urllib.parse
 import threading
 import time
 from dotenv import load_dotenv
-from database import connect_db, create_user_downloads_table, get_download_count, increment_download_count
+from database import connect_db, create_user_downloads_table, get_download_count, increment_download_count, reset_database
 from requests.exceptions import ConnectionError, SSLError
 import re
 from flask import Flask, jsonify, request, send_from_directory
@@ -18,7 +18,7 @@ from flask import Flask, jsonify, request, send_from_directory
 logging.basicConfig(level=logging.DEBUG)
 
 # List of user IDs that can bypass verification
-admin_user_ids = [123456789, 987654321]  # Replace with actual user IDs
+admin_user_ids = [7951420571, 987654321]  # Replace with actual user IDs
 
 # Load environment variables
 load_dotenv()
@@ -126,6 +126,27 @@ def send_welcome(message):
     )
     
     bot.send_message(message.chat.id, welcome_message)
+
+@bot.message_handler(commands=['reset'])
+def reset_database_command(message):
+    user_id = message.chat.id
+    if user_id in admin_user_ids:
+        if reset_database():
+            bot.send_message(user_id, "Database has been reset successfully.")
+        else:
+            bot.send_message(user_id, "Failed to reset the database. Please try again later.")
+    else:
+        bot.send_message(user_id, "You don't have the required permissions to reset the database.")
+
+@app.route('/reset', methods=['POST'])
+def reset_database_route():
+    try:
+        if reset_database():
+            return jsonify({"status": "success", "message": "Database has been reset successfully."}), 200
+        else:
+            return jsonify({"status": "error", "message": "Failed to reset the database."}), 500
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @bot.message_handler(func=lambda message: True)
 def handle_link(message):
