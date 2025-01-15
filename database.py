@@ -1,15 +1,21 @@
-# database.py
 import psycopg2
 from datetime import datetime
 import os
 
+# Load environment variables
+DB_HOST = os.getenv('PGHOST')
+DB_NAME = os.getenv('PGDATABASE')
+DB_USER = os.getenv('PGUSER')
+DB_PASSWORD = os.getenv('PGPASSWORD')
+DB_PORT = os.getenv('PGPORT')
+
 def connect_db():
     conn = psycopg2.connect(
-        dbname=os.getenv("PGDATABASE"),
-        user=os.getenv("PGUSER"),
-        password=os.getenv("PGPASSWORD"),
-        host=os.getenv("PGHOST"),
-        port=os.getenv("PGPORT")
+        host=DB_HOST,
+        database=DB_NAME,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        port=DB_PORT
     )
     return conn
 
