@@ -515,6 +515,7 @@ setup_database()
 def process_file(unique_filepath, file_size, file_name, call):
     user_id = call.message.chat.id
     conn = connect_db()  # Ensure you establish a database connection
+    resolution = "1080p"  # Set the appropriate resolution
 
     # Check if user is an admin or mod
     if user_id in admin_user_ids:
@@ -534,7 +535,7 @@ def process_file(unique_filepath, file_size, file_name, call):
                 logging.error("Failed to upload video after multiple attempts")
                 bot.send_message(call.message.chat.id, "Failed to upload video after multiple attempts.")
         else:
-            send_download_button(call.message.chat.id, file_name)
+            send_download_button(call.message.chat.id, file_name, resolution, user_id)
             bot.send_message(call.message.chat.id, "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes to keep the server clean and efficient.")
             threading.Thread(target=delete_file_after_delay, args=(unique_filepath, call.message.chat.id)).start()
             increment_download_count(conn, user_id)
