@@ -7,11 +7,7 @@ app = Flask(__name__)
 # Set up basic logging configuration
 logging.basicConfig(level=logging.DEBUG)
 
-# Debugging message when the server starts
-@app.before_first_request
-def before_first_request():
-    app.logger.debug("App has started and is waiting for requests...")
-
+# Log when the app starts
 @app.route('/test')
 def test():
     app.logger.debug("Test route accessed.")  # Log when the route is accessed
