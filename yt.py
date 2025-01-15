@@ -34,6 +34,9 @@ bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 # Path to your cookies file in Railway project
 COOKIES_PATH = "/app/cookies.txt"
 
+# Initialize Flask
+app = Flask(__name__)
+
 def delete_file_after_delay(file_path, chat_id):
     time.sleep(1800)
     try:
@@ -511,9 +514,6 @@ def send_video_with_retries(file_path, chat_id, retries=3):
 
 # Start polling for the bot
 threading.Thread(target=bot.polling, kwargs={'none_stop': True}).start()
-
-# Initialize the Flask app
-app = Flask(__name__)
 
 # Flask routes
 @app.route('/')
