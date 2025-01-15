@@ -5,6 +5,7 @@ google-auth
 google-auth-oauthlib
 google-auth-httplib2
 google-api-python-client
+pyTelegramBotAPI
 python-dotenv
 Flask==2.0.1
 gunicorn==20.1.0
