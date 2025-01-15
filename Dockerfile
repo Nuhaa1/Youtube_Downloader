@@ -18,9 +18,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Expose the port (the same port used in Gunicorn)
 EXPOSE 5000
 
+# Set environment variable for port
+ENV PORT=5000
+
 # Create entry script
 RUN echo '#!/bin/sh\nexec gunicorn server:app --bind 0.0.0.0:$PORT' > /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
-# Use the entry script to start the app
+# Use entry script to start the app
 ENTRYPOINT ["/app/entrypoint.sh"]
