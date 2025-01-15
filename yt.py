@@ -67,6 +67,23 @@ def shorten_url(long_url):
         logging.error(f"Error shortening URL: {response.status_code}")
         return long_url  # Fallback to the original URL if there's an error
 
+def get_verification_url(filepath):
+    adtival_api_url = "https://www.adtival.network/api"
+    api_key = os.getenv('ADTIVAL_API_TOKEN')  # Make sure your API token is correctly set in the environment variables
+    params = {
+        'api': api_key,
+        'url': f"https://web-production-f9ab3.up.railway.app/downloads/{filepath}",  # Use your actual domain
+        'format': 'json'
+    }
+    response = requests.get(adtival_api_url, params=params)
+    data = response.json()
+    
+    if 'shortenedUrl' in data:
+        return data['shortenedUrl']
+    else:
+        logging.error("Failed to generate shortened URL")
+        return None
+
 # Test the URL shortening function
 short_url = shorten_url("https://web-production-f9ab3.up.railway.app/downloads/samplefile.mp4")
 print("Shortened URL:", short_url)
@@ -412,13 +429,13 @@ setup_database()
 def process_file(unique_filepath, file_size, file_name, call):
     user_id = call.message.chat.id
     conn = connect_db()  # Ensure you establish a database connection
-    
+
     # Check if user is an admin or mod
     if user_id in admin_user_ids:
         bypass_verification = True
     else:
         bypass_verification = False
-    
+
     if bypass_verification or get_download_count(conn, user_id) < 2:
         # Allow download without verification
         file_name = sanitize_and_encode_filename(file_name)
@@ -437,21 +454,12 @@ def process_file(unique_filepath, file_size, file_name, call):
             increment_download_count(conn, user_id)
     else:
         # Require verification after two downloads
-        bot.send_message(user_id, "You have reached your download limit of 2 per day. Please use the verification link for further downloads.")
         verification_url = get_verification_url(unique_filepath)  # Function to get Adtival URL
-        bot.send_message(user_id, f"Verify and download here: {verification_url}")
-
-def get_verification_url(filepath):
-    adtival_api_url = "https://www.adtival.network/api"
-    api_key = "your_adtival_api_key"
-    params = {
-        'api': api_key,
-        'url': f"https://your_domain.com/downloads/{filepath}",
-        'format': 'json'
-    }
-    response = requests.get(adtival_api_url, params=params)
-    data = response.json()
-    return data['shortenedUrl']
+        if verification_url:
+            bot.send_message(user_id, "You have reached your download limit of 2 per day. Please use the verification link for further downloads.")
+            bot.send_message(user_id, f"Verify and download here: {verification_url}")
+        else:
+            bot.send_message(user_id, "Failed to generate verification link. Please try again later.")
 
 def send_video_with_retries(file_path, chat_id, retries=3):
     for attempt in range(retries):
