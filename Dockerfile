@@ -1,3 +1,4 @@
+# Use a Python base image
 FROM python:3.9-slim
 
 # Install ffmpeg
@@ -14,8 +15,8 @@ COPY . /app
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Ensure the virtual environment is activated
-ENV PATH="/opt/venv/bin:$PATH"
+# Expose the port (the same port used in Gunicorn)
+EXPOSE 5000
 
-# Command to run the app
-CMD ["python", "app.py"]
+# Use gunicorn to serve the app (matches the Procfile configuration)
+CMD ["gunicorn", "server:app", "--bind", "0.0.0.0:$PORT"]
