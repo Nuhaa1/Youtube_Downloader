@@ -3,6 +3,8 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from yt_dlp import YoutubeDL
 import os
 import requests
+import json
+import logging
 import urllib.parse
 import logging
 import threading
@@ -41,16 +43,30 @@ def delete_file_after_delay(file_path, chat_id):
     except Exception as e:
         logging.error(f"Error deleting file: {file_path}, Error: {e}")
 
+# Define the URL shortening function
 def shorten_url(long_url):
     api_token = '2def3581e95ab748dd52fc12a0852c33a6a9f743'
-    api_url = f"https://www.adtival.network/api?api={api_token}&url={long_url}&format=text"
+    api_url = f"https://www.adtival.network/api?api={api_token}&url={long_url}&format=json"
     
     response = requests.get(api_url)
     if response.status_code == 200:
-        return response.text.strip()
+        try:
+            result = response.json()
+            if result['status'] == 'success':
+                return result['shortenedUrl']
+            else:
+                logging.error(f"Error from Adtival: {result['message']}")
+                return long_url  # Fallback to the original URL if there's an error
+        except json.JSONDecodeError:
+            logging.error("Error decoding JSON response from Adtival")
+            return long_url  # Fallback to the original URL if there's an error
     else:
         logging.error(f"Error shortening URL: {response.status_code}")
         return long_url  # Fallback to the original URL if there's an error
+
+# Test the URL shortening function
+short_url = shorten_url("https://web-production-f9ab3.up.railway.app/downloads/samplefile.mp4")
+print("Shortened URL:", short_url)
 
 def get_unique_filepath(base_filepath, ext):
     counter = 1
