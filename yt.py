@@ -101,7 +101,6 @@ def handle_youtube_video(url, message):
         clean_url = f"https://www.youtube.com/watch?v={video_id}"
 
         with YoutubeDL(ydl_opts) as ydl:
-            logging.debug(f"Fetching video qualities for URL: {clean_url}")
             info = ydl.extract_info(clean_url, download=False)
             formats = info.get('formats', [])
             keyboard = InlineKeyboardMarkup()
