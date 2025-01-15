@@ -223,10 +223,61 @@ def handle_youtube_video(url, message):
         logging.error(f"Error fetching video qualities: {e}")
         bot.reply_to(message, f"Failed to fetch video qualities. Error: {e}")
 
-def get_download_link(file_name):
-    encoded_file_name = urllib.parse.quote(file_name)
-    download_link = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
+def get_download_link(file_name, resolution, user_id):
+    # Update download count for the user
+    conn = connect_db()
+    download_count = get_download_count(conn, user_id)
+
+    # Directly use Adtival for 2K (1440p) and 4K (2160p) resolutions
+    if resolution in ["1440p", "2160p"]:
+        encoded_file_name = urllib.parse.quote(file_name)
+        long_url = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
+        download_link = shorten_url(long_url)
+    # No Adtival for the first 1080p download
+    elif download_count == 0 and resolution == "1080p":
+        encoded_file_name = urllib.parse.quote(file_name)
+        download_link = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
+    # Apply Adtival for the second and subsequent 1080p downloads
+    elif resolution == "1080p":
+        encoded_file_name = urllib.parse.quote(file_name)
+        long_url = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
+        download_link = shorten_url(long_url)
+    # For other resolutions, the first two downloads are free, then use Adtival
+    else:
+        if download_count < 2:
+            encoded_file_name = urllib.parse.quote(file_name)
+            download_link = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
+        else:
+            encoded_file_name = urllib.parse.quote(file_name)
+            long_url = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
+            download_link = shorten_url(long_url)
+
+    # Increment the download count for the user
+    increment_download_count(conn, user_id)
+    conn.close()
+
     return download_link
+
+@bot.message_handler(commands=['download'])
+def handle_download_command(message):
+    user_id = message.chat.id
+    video_url = message.text.split(' ')[1]  # Assuming the format is /download <video_url>
+    resolution = "1080p"  # You can set resolution dynamically based on user input
+
+    # Process the video URL to get the actual file name using yt-dlp
+    ydl_opts = {
+        'format': f'bestvideo[height<={resolution}]+bestaudio/best',
+        'outtmpl': f'{DOWNLOAD_PATH}%(title)s.%(ext)s',
+    }
+    with YoutubeDL(ydl_opts) as ydl:
+        info_dict = ydl.extract_info(video_url, download=True)
+        file_name = ydl.prepare_filename(info_dict)
+        file_name = os.path.basename(file_name)  # Get the actual file name
+
+    download_link = get_download_link(file_name, resolution, user_id)
+
+    bot.send_message(user_id, f"Here is your download link: {download_link}")
+
 
 def send_download_button(chat_id, file_name):
     original_download_link = get_download_link(file_name)
