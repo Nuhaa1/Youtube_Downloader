@@ -17,6 +17,9 @@ from flask import Flask, jsonify, request, send_from_directory
 # Set up basic logging
 logging.basicConfig(level=logging.DEBUG)
 
+# List of user IDs that can bypass verification
+admin_user_ids = [123456789, 987654321]  # Replace with actual user IDs
+
 # Load environment variables
 load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -408,26 +411,47 @@ setup_database()
 
 def process_file(unique_filepath, file_size, file_name, call):
     user_id = call.message.chat.id
-    conn = connect_db()  # Establish a database connection
+    conn = connect_db()  # Ensure you establish a database connection
     
-    if get_download_count(conn, user_id) >= 2:
-        bot.send_message(user_id, "You have reached your download limit of 2 per day. Please try again tomorrow.")
-        return
-    
-    file_name = sanitize_and_encode_filename(file_name)
-    if file_size <= TELEGRAM_UPLOAD_LIMIT:
-        if send_video_with_retries(unique_filepath, call.message.chat.id):
-            os.remove(unique_filepath)
-            logging.debug(f"Deleted file after upload: {unique_filepath}")
-            increment_download_count(conn, user_id)
-        else:
-            logging.error("Failed to upload video after multiple attempts")
-            bot.send_message(call.message.chat.id, "Failed to upload video after multiple attempts.")
+    # Check if user is an admin or mod
+    if user_id in admin_user_ids:
+        bypass_verification = True
     else:
-        send_download_button(call.message.chat.id, file_name)
-        bot.send_message(call.message.chat.id, "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes to keep the server clean and efficient.")
-        threading.Thread(target=delete_file_after_delay, args=(unique_filepath, call.message.chat.id)).start()
-        increment_download_count(conn, user_id)
+        bypass_verification = False
+    
+    if bypass_verification or get_download_count(conn, user_id) < 2:
+        # Allow download without verification
+        file_name = sanitize_and_encode_filename(file_name)
+        if file_size <= TELEGRAM_UPLOAD_LIMIT:
+            if send_video_with_retries(unique_filepath, call.message.chat.id):
+                os.remove(unique_filepath)
+                logging.debug(f"Deleted file after upload: {unique_filepath}")
+                increment_download_count(conn, user_id)
+            else:
+                logging.error("Failed to upload video after multiple attempts")
+                bot.send_message(call.message.chat.id, "Failed to upload video after multiple attempts.")
+        else:
+            send_download_button(call.message.chat.id, file_name)
+            bot.send_message(call.message.chat.id, "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes to keep the server clean and efficient.")
+            threading.Thread(target=delete_file_after_delay, args=(unique_filepath, call.message.chat.id)).start()
+            increment_download_count(conn, user_id)
+    else:
+        # Require verification after two downloads
+        bot.send_message(user_id, "You have reached your download limit of 2 per day. Please use the verification link for further downloads.")
+        verification_url = get_verification_url(unique_filepath)  # Function to get Adtival URL
+        bot.send_message(user_id, f"Verify and download here: {verification_url}")
+
+def get_verification_url(filepath):
+    adtival_api_url = "https://www.adtival.network/api"
+    api_key = "your_adtival_api_key"
+    params = {
+        'api': api_key,
+        'url': f"https://your_domain.com/downloads/{filepath}",
+        'format': 'json'
+    }
+    response = requests.get(adtival_api_url, params=params)
+    data = response.json()
+    return data['shortenedUrl']
 
 def send_video_with_retries(file_path, chat_id, retries=3):
     for attempt in range(retries):
