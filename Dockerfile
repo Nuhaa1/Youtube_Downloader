@@ -16,7 +16,7 @@ COPY . /app
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose the port (the same port used in Gunicorn)
+# Expose the port
 EXPOSE 5000
 
 # Copy supervisord.conf
