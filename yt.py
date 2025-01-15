@@ -335,7 +335,13 @@ def send_audio_with_retries(file_path, chat_id, retries=3):
                 time.sleep(2)  # Wait before retrying
     return False
 
+def sanitize_and_encode_filename(filename):
+    sanitized_filename = re.sub(r'[\\/*?:"<>|]', "_", filename)
+    encoded_filename = urllib.parse.quote(sanitized_filename)
+    return encoded_filename
+
 def process_file(unique_filepath, file_size, file_name, call):
+    file_name = sanitize_and_encode_filename(file_name)
     if file_size <= TELEGRAM_UPLOAD_LIMIT:
         if send_video_with_retries(unique_filepath, call.message.chat.id):
             os.remove(unique_filepath)
@@ -344,8 +350,7 @@ def process_file(unique_filepath, file_size, file_name, call):
             logging.error("Failed to upload video after multiple attempts")
             bot.send_message(call.message.chat.id, "Failed to upload video after multiple attempts.")
     else:
-        encoded_file_name = urllib.parse.quote(file_name)
-        download_link = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
+        download_link = f"https://web-production-f9ab3.up.railway.app/downloads/{file_name}"
         bot.send_message(call.message.chat.id, f"The file is too large to upload to Telegram. You can download it here:\n{download_link}")
 
         bot.send_message(call.message.chat.id, "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes.")
@@ -397,6 +402,14 @@ def download():
     except Exception as e:
         logging.error(f"Error downloading video: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/downloads/<path:filename>')
+def download_file(filename):
+    try:
+        decoded_filename = urllib.parse.unquote(filename)
+        return send_from_directory(DOWNLOAD_PATH, decoded_filename, as_attachment=True)
+    except FileNotFoundError:
+        return jsonify({"error": "File not found"}), 404
 
 # Flask helper functions
 def download_video(url, quality, source):
