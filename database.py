@@ -6,7 +6,7 @@ import os
 DB_HOST = os.getenv('PGHOST')
 DB_NAME = os.getenv('PGDATABASE')
 DB_USER = os.getenv('PGUSER')
-DB_PASSWORD = os.getenv('PGPASSWORD')
+DB_PASSWORD = os.getenv('POSTGRES_PASSWORD')  # Ensure this matches your environment variable
 DB_PORT = os.getenv('PGPORT')
 
 def connect_db():
