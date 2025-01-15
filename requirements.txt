@@ -7,5 +7,5 @@ google-auth-httplib2
 google-api-python-client
 pyTelegramBotAPI
 python-dotenv
-Flask==2.0.1
+Flask==2.2.5
 gunicorn==22.0.0
