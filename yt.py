@@ -46,7 +46,6 @@ def delete_file_after_delay(file_path, chat_id):
     except Exception as e:
         logging.error(f"Error deleting file: {file_path}, Error: {e}")
 
-# Define the URL shortening function
 def shorten_url(long_url):
     api_token = os.getenv('ADTIVAL_API_TOKEN')
     api_url = f"https://www.adtival.network/api?api={api_token}&url={long_url}&format=json"
@@ -69,7 +68,7 @@ def shorten_url(long_url):
 
 def get_verification_url(filepath):
     adtival_api_url = "https://www.adtival.network/api"
-    api_key = os.getenv('ADTIVAL_API_TOKEN')  # Make sure your API token is correctly set in the environment variables
+    api_key = os.getenv('ADTIVAL_API_TOKEN')  # Ensure your API token is correctly set in the environment variables
     params = {
         'api': api_key,
         'url': f"https://web-production-f9ab3.up.railway.app/downloads/{filepath}",  # Use your actual domain
@@ -454,10 +453,14 @@ def process_file(unique_filepath, file_size, file_name, call):
             increment_download_count(conn, user_id)
     else:
         # Require verification after two downloads
-        verification_url = get_verification_url(unique_filepath)  # Function to get Adtival URL
+        verification_url = get_verification_url(file_name)  # Use sanitized filename
         if verification_url:
-            bot.send_message(user_id, "You have reached your download limit of 2 per day. Please use the verification link for further downloads.")
-            bot.send_message(user_id, f"Verify and download here: {verification_url}")
+            keyboard = InlineKeyboardMarkup()
+            download_button = InlineKeyboardButton(text="Verify and Download", url=verification_url)
+            keyboard.add(download_button)
+            bot.send_message(user_id, (
+                "You have reached your download limit of 2 per day. Please use the verification link for further downloads."
+            ), reply_markup=keyboard)
         else:
             bot.send_message(user_id, "Failed to generate verification link. Please try again later.")
 
