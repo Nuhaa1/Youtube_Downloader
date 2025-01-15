@@ -19,12 +19,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Expose the port (the same port used in Gunicorn)
 EXPOSE 5000
 
-# Create supervisord.conf on the fly
-RUN echo "[supervisord]\nnodaemon=true\n\n[program:flask]\ncommand=/app/entrypoint.sh\nautostart=true\nautorestart=true\n\n[program:yt]\ncommand=python /app/yt.py\nautostart=true\nautorestart=true" > /etc/supervisor/conf.d/supervisord.conf
+# Set environment variable for port
+ENV PORT=5000
 
-# Create entry script
-RUN echo '#!/bin/sh\nexec gunicorn server:app --bind 0.0.0.0:$PORT' > /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
+# Create supervisord.conf on the fly
+RUN echo "[supervisord]\nnodaemon=true\n\n[program:web]\ncommand=python /app/Server.py\nautostart=true\nautorestart=true\n\n[program:worker]\ncommand=python /app/yt.py\nautostart=true\nautorestart=true" > /etc/supervisor/conf.d/supervisord.conf
 
 # Use supervisor to manage processes
 CMD ["/usr/bin/supervisord"]
