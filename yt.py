@@ -126,6 +126,19 @@ def handle_youtube_video(url, message):
         logging.error(f"Error fetching video qualities: {e}")
         bot.reply_to(message, f"Failed to fetch video qualities. Error: {e}")
 
+def get_download_link(file_name):
+    encoded_file_name = urllib.parse.quote(file_name)
+    download_link = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
+    return download_link
+
+def send_download_button(chat_id, file_name):
+    download_link = get_download_link(file_name)
+    keyboard = InlineKeyboardMarkup()
+    download_button = InlineKeyboardButton(text="Download", url=download_link)
+    keyboard.add(download_button)
+    
+    bot.send_message(chat_id, "The file is too large to upload to Telegram. You can download it using the button below.", reply_markup=keyboard)
+
 def handle_dailymotion_video(url, message):
     try:
         ydl_opts = {'quiet': True, 'noplaylist': True, 'force_generic_extractor': True}
@@ -186,10 +199,7 @@ def handle_tiktok_video(url, message):
                         logging.error("Failed to upload video after multiple attempts")
                         bot.send_message(message.chat.id, "Failed to upload video after multiple attempts.")
                 else:
-                    encoded_file_name = urllib.parse.quote(file_name)
-                    download_link = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
-                    bot.send_message(call.message.chat.id, f"The file is too large to upload to Telegram. You can download it here:\n{download_link}")
-
+                    send_download_button(message.chat.id, file_name)
                     bot.send_message(message.chat.id, "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes.")
                     threading.Thread(target=delete_file_after_delay, args=(unique_filepath, message.chat.id)).start()
             else:
@@ -350,9 +360,7 @@ def process_file(unique_filepath, file_size, file_name, call):
             logging.error("Failed to upload video after multiple attempts")
             bot.send_message(call.message.chat.id, "Failed to upload video after multiple attempts.")
     else:
-        download_link = f"https://web-production-f9ab3.up.railway.app/downloads/{file_name}"
-        bot.send_message(call.message.chat.id, f"The file is too large to upload to Telegram. You can download it here:\n{download_link}")
-
+        send_download_button(call.message.chat.id, file_name)
         bot.send_message(call.message.chat.id, "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes.")
         threading.Thread(target=delete_file_after_delay, args=(unique_filepath, call.message.chat.id)).start()
 
