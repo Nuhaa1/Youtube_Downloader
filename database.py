@@ -2,6 +2,7 @@ import psycopg2
 from psycopg2.extras import DictCursor
 import os
 from dotenv import load_dotenv
+from datetime import datetime
 
 # Load environment variables from .env file
 load_dotenv()
@@ -16,6 +17,28 @@ def connect_db():
     except psycopg2.Error as e:
         print(f"Error connecting to database: {e}")
         return None
+
+def create_user_downloads_table(conn):
+    """Create the user_downloads table if it doesn't exist."""
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_downloads (
+            user_id BIGINT PRIMARY KEY,
+            download_count INTEGER NOT NULL,
+            last_download_date DATE NOT NULL
+        )
+    """)
+    conn.commit()
+
+def ensure_user_in_db(conn, user_id):
+    """Ensure the user exists in the database."""
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO user_downloads (user_id, download_count, last_download_date)
+        VALUES (%s, %s, %s)
+        ON CONFLICT (user_id) DO NOTHING
+    """, (user_id, 0, datetime.now().date()))
+    conn.commit()
 
 def is_blacklisted(url):
     """Check if a URL is blacklisted."""
@@ -48,13 +71,3 @@ def add_to_blacklist(url):
     finally:
         conn.close()
     return True
-
-def ensure_user_in_db(conn, user_id):
-    """Ensure the user exists in the database."""
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO user_downloads (user_id, download_count, last_download_date)
-        VALUES (%s, %s, %s)
-        ON CONFLICT (user_id) DO NOTHING
-    """, (user_id, 0, datetime.now().date()))
-    conn.commit()
