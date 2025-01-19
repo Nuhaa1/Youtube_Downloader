@@ -40,34 +40,35 @@ def ensure_user_in_db(conn, user_id):
     """, (user_id, 0, datetime.now().date()))
     conn.commit()
 
-def is_blacklisted(url):
-    """Check if a URL is blacklisted."""
-    conn = connect_db()
-    if conn is None:
-        return False
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM blacklist WHERE url = %s", (url,))
-        result = cursor.fetchone()
-        return result is not None
-    except psycopg2.Error as e:
-        print(f"Error checking blacklist: {e}")
-        return False
-    finally:
-        conn.close()
+def get_download_count(conn, user_id):
+    """Get the download count for a user."""
+    cursor = conn.cursor()
+    cursor.execute("SELECT download_count FROM user_downloads WHERE user_id = %s", (user_id,))
+    result = cursor.fetchone()
+    return result['download_count'] if result else 0
 
-def add_to_blacklist(url):
-    """Add a URL to the blacklist."""
-    conn = connect_db()
-    if conn is None:
-        return False
+def increment_download_count(conn, user_id):
+    """Increment the download count for a user."""
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE user_downloads
+        SET download_count = download_count + 1,
+            last_download_date = %s
+        WHERE user_id = %s
+    """, (datetime.now().date(), user_id))
+    conn.commit()
+
+def reset_database():
+    """Reset the user_downloads table in the database."""
     try:
+        conn = connect_db()
+        if conn is None:
+            return False
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO blacklist (url) VALUES (%s)", (url,))
-        conn.commit()
-    except psycopg2.Error as e:
-        print(f"Error adding to blacklist: {e}")
-        return False
-    finally:
+        cursor.execute("DROP TABLE IF EXISTS user_downloads")
+        create_user_downloads_table(conn)
         conn.close()
-    return True
+        return True
+    except psycopg2.Error as e:
+        print(f"Error resetting database: {e}")
+        return False
