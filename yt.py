@@ -349,10 +349,10 @@ def check_tiktok_accessibility():
 
 def handle_tiktok_video(url, message):
     try:
-        check_tiktok_accessibility()  # Check if TikTok is accessible
+        check_tiktok_accessibility()
         
         logging.debug(f"Starting to download TikTok video: {url}")
-        
+
         ydl_opts = {
             'format': 'best',
             'outtmpl': f'{DOWNLOAD_PATH}%(title)s.%(ext)s',
@@ -369,10 +369,10 @@ def handle_tiktok_video(url, message):
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             logging.debug(f"Video info: {info}")
-            
+
             file_path = ydl.prepare_filename(info)
             logging.debug(f"File path: {file_path}")
-            
+
             base_filepath, ext = os.path.splitext(file_path)
             unique_filepath = get_unique_filepath(base_filepath, ext)
 
