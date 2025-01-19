@@ -1,5 +1,5 @@
 python-telegram-bot==13.5
-yt-dlp @ git+https://github.com/yt-dlp/yt-dlp@nightly
+yt-dlp==2025.1.12
 requests
 psycopg2
 pyTelegramBotAPI

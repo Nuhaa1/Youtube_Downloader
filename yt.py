@@ -337,21 +337,41 @@ def handle_dailymotion_video(url, message):
         logging.error(f"Error fetching video qualities: {e}")
         bot.reply_to(message, f"Failed to fetch video qualities. Error: {e}")
 
+def check_tiktok_accessibility():
+    try:
+        response = requests.get("https://www.tiktok.com")
+        if response.status_code == 200:
+            print("TikTok is accessible")
+        else:
+            print("TikTok is not accessible")
+    except requests.exceptions.RequestException as e:
+        print(f"Network error: {e}")
+
 def handle_tiktok_video(url, message):
     try:
+        check_tiktok_accessibility()  # Check if TikTok is accessible
+        
+        logging.debug(f"Starting to download TikTok video: {url}")
+        
         ydl_opts = {
             'format': 'best',
             'outtmpl': f'{DOWNLOAD_PATH}%(title)s.%(ext)s',
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         }
 
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
+            logging.debug(f"Video info: {info}")
+            
             file_path = ydl.prepare_filename(info)
+            logging.debug(f"File path: {file_path}")
+            
             base_filepath, ext = os.path.splitext(file_path)
             unique_filepath = get_unique_filepath(base_filepath, ext)
 
             if os.path.exists(file_path):
                 os.rename(file_path, unique_filepath)
+                logging.debug(f"File renamed to: {unique_filepath}")
 
             file_name = os.path.basename(unique_filepath)
 
