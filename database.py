@@ -48,3 +48,13 @@ def add_to_blacklist(url):
     finally:
         conn.close()
     return True
+
+def ensure_user_in_db(conn, user_id):
+    """Ensure the user exists in the database."""
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO user_downloads (user_id, download_count, last_download_date)
+        VALUES (%s, %s, %s)
+        ON CONFLICT (user_id) DO NOTHING
+    """, (user_id, 0, datetime.now().date()))
+    conn.commit()
