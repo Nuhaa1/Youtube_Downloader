@@ -1,3 +1,4 @@
+import os  # Import the os module
 import psycopg2
 from psycopg2.extras import DictCursor
 from datetime import datetime
@@ -6,7 +7,7 @@ import logging
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
-# Load environment variables (no need to use .env if using Railway environment variables directly)
+# Load environment variables from .env file (even if you are not using .env, Railway will provide the variables)
 PGUSER = os.getenv('PGUSER')
 PGPASSWORD = os.getenv('POSTGRES_PASSWORD')  # Update to POSTGRES_PASSWORD
 PGHOST = os.getenv('PGHOST')
@@ -25,7 +26,7 @@ def connect_db():
         
         conn = psycopg2.connect(
             user=PGUSER,
-            password=PGPASSWORD,  # Update to use POSTGRES_PASSWORD
+            password=PGPASSWORD,
             host=PGHOST,
             database=PGDATABASE,
             port=PGPORT,
