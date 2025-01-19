@@ -13,6 +13,9 @@ RUN pip install --upgrade pip && \
 # Install ffmpeg
 RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
 
+# Install the latest yt-dlp
+RUN pip install --upgrade yt-dlp
+
 # Expose the port
 EXPOSE 80
 

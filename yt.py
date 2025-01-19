@@ -348,9 +348,8 @@ def check_tiktok_accessibility():
         print(f"Network error: {e}")
 
 def handle_tiktok_video(url, message):
+    chat_id = message.chat.id
     try:
-        check_tiktok_accessibility()
-        
         logging.debug(f"Starting to download TikTok video: {url}")
 
         ydl_opts = {
@@ -363,6 +362,7 @@ def handle_tiktok_video(url, message):
                 'Cache-Control': 'no-cache',
                 'Connection': 'keep-alive',
                 'Pragma': 'no-cache',
+                'Referer': 'https://www.tiktok.com/',
             }
         }
 
@@ -387,21 +387,21 @@ def handle_tiktok_video(url, message):
                 logging.debug(f"Downloaded file size: {file_size}")
 
                 if file_size <= TELEGRAM_UPLOAD_LIMIT:
-                    if send_video_with_retries(unique_filepath, message.chat.id):
+                    if send_video_with_retries(unique_filepath, chat_id):
                         os.remove(unique_filepath)
                         logging.debug(f"Deleted file after upload: {unique_filepath}")
                     else:
                         logging.error("Failed to upload video after multiple attempts")
-                        bot.send_message(message.chat.id, "Failed to upload video after multiple attempts.")
+                        bot.send_message(chat_id, "Failed to upload video after multiple attempts.")
                 else:
-                    send_download_button(message.chat.id, file_name)
-                    threading.Thread(target=delete_file_after_delay, args=(unique_filepath, message.chat.id)).start()
+                    send_download_button(chat_id, file_name)
+                    threading.Thread(target=delete_file_after_delay, args=(unique_filepath, chat_id)).start()
             else:
                 logging.error(f"File not found: {unique_filepath}")
-                bot.send_message(message.chat.id, "Failed to download video. File not found after download.")
+                bot.send_message(chat_id, "Failed to download video. File not found after download.")
     except Exception as e:
         logging.error(f"Error during video processing: {e}")
-        bot.send_message(message.chat.id, f"Failed to download video. Error: {e}")
+        bot.send_message(chat_id, f"Failed to download video. Error: {e}")
 
 @bot.callback_query_handler(func=lambda call: True)
 def handle_quality_callback(call):
