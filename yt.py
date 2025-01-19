@@ -406,7 +406,7 @@ def handle_tiktok_video(url, message):
                 bot.send_message(chat_id, "Failed to download video. File not found after download.")
     except Exception as e:
         logging.error(f"Error during video processing: {e}", exc_info=True)
-        bot.send_message(chat_id, "Failed to download video. Currently, TikTok downloads are unavailable due to regional restrictions.")
+        bot.send_message(chat_id, "Failed to download video. Currently, TikTok downloads are unavailable due to regional restrictions. Our servers are located in the US, where TikTok has imposed stricter access controls. This means we're currently unable to download TikTok videos. We apologize for the inconvenience and appreciate your understanding.")
 
 @bot.callback_query_handler(func=lambda call: True)
 def handle_quality_callback(call):
