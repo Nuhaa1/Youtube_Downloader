@@ -1,18 +1,14 @@
 import psycopg2
 from psycopg2.extras import DictCursor
-import os
-from dotenv import load_dotenv
 from datetime import datetime
 import logging
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
-# Load environment variables from .env file
-load_dotenv()
-
+# Load environment variables (no need to use .env if using Railway environment variables directly)
 PGUSER = os.getenv('PGUSER')
-PGPASSWORD = os.getenv('PGPASSWORD')
+PGPASSWORD = os.getenv('POSTGRES_PASSWORD')  # Update to POSTGRES_PASSWORD
 PGHOST = os.getenv('PGHOST')
 PGDATABASE = os.getenv('PGDATABASE')
 PGPORT = os.getenv('PGPORT')
@@ -20,10 +16,16 @@ PGPORT = os.getenv('PGPORT')
 def connect_db():
     """Establish a connection to the PostgreSQL database."""
     try:
-        logging.debug("Connecting to the database...")
+        logging.debug("Connecting to the database with the following settings:")
+        logging.debug(f"PGUSER: {PGUSER}")
+        logging.debug(f"PGPASSWORD: {'******' if PGPASSWORD else 'None'}")
+        logging.debug(f"PGHOST: {PGHOST}")
+        logging.debug(f"PGDATABASE: {PGDATABASE}")
+        logging.debug(f"PGPORT: {PGPORT}")
+        
         conn = psycopg2.connect(
             user=PGUSER,
-            password=PGPASSWORD,
+            password=PGPASSWORD,  # Update to use POSTGRES_PASSWORD
             host=PGHOST,
             database=PGDATABASE,
             port=PGPORT,
