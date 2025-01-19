@@ -7,12 +7,23 @@ from datetime import datetime
 # Load environment variables from .env file
 load_dotenv()
 
-DATABASE_URL = os.getenv('DATABASE_URL')
+PGUSER = os.getenv('PGUSER')
+PGPASSWORD = os.getenv('POSTGRES_PASSWORD')
+PGHOST = os.getenv('PGHOST')
+PGDATABASE = os.getenv('PGDATABASE')
+PGPORT = os.getenv('PGPORT')
 
 def connect_db():
     """Establish a connection to the PostgreSQL database."""
     try:
-        conn = psycopg2.connect(DATABASE_URL, cursor_factory=DictCursor)
+        conn = psycopg2.connect(
+            user=PGUSER,
+            password=PGPASSWORD,
+            host=PGHOST,
+            database=PGDATABASE,
+            port=PGPORT,
+            cursor_factory=DictCursor
+        )
         return conn
     except psycopg2.Error as e:
         print(f"Error connecting to database: {e}")
