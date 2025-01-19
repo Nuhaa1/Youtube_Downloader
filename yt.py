@@ -357,13 +357,18 @@ def handle_tiktok_video(url, message):
             'outtmpl': f'{DOWNLOAD_PATH}%(title)s.%(ext)s',
             'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'http_headers': {
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
                 'Accept-Language': 'en-US,en;q=0.9',
                 'Accept-Encoding': 'gzip, deflate, br',
-                'Cache-Control': 'no-cache',
+                'Cache-Control': 'max-age=0',
                 'Connection': 'keep-alive',
                 'Pragma': 'no-cache',
+                'Upgrade-Insecure-Requests': '1',
                 'Referer': 'https://www.tiktok.com/',
-            }
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            },
+            'verbose': True,
+            'logger': logging.getLogger()
         }
 
         with YoutubeDL(ydl_opts) as ydl:
@@ -400,7 +405,7 @@ def handle_tiktok_video(url, message):
                 logging.error(f"File not found: {unique_filepath}")
                 bot.send_message(chat_id, "Failed to download video. File not found after download.")
     except Exception as e:
-        logging.error(f"Error during video processing: {e}")
+        logging.error(f"Error during video processing: {e}", exc_info=True)
         bot.send_message(chat_id, f"Failed to download video. Error: {e}")
 
 @bot.callback_query_handler(func=lambda call: True)
