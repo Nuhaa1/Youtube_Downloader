@@ -1,8 +1,8 @@
-python-telegram-bot @ git+https://github.com/python-telegram-bot/python-telegram-bot@master
-yt-dlp @ git+https://github.com/yt-dlp/yt-dlp@nightly
+python-telegram-bot==13.5
+yt-dlp==2025.01.15
 requests
 psycopg2
-pyTelegramBotAPI @ git+https://github.com/eternnoir/pyTelegramBotAPI@master
+pyTelegramBotAPI
 python-dotenv
 Flask==2.2.5
 gunicorn==22.0.0
