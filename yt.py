@@ -224,42 +224,49 @@ def handle_youtube_video(url, message):
         logging.error(f"Error fetching video qualities: {e}")
         bot.reply_to(message, f"Failed to fetch video qualities. Error: {e}")
 
+admin_user_ids = [7951420571, 987654321]  # Replace with actual user IDs
+
 def get_download_link(file_name, resolution, user_id):
     conn = connect_db()
     logging.info(f"Entered get_download_link for user {user_id}, resolution {resolution}")
     ensure_user_in_db(conn, user_id)  # Ensure user exists in the database
-    download_count = get_download_count(conn, user_id)
-    logging.info(f"User {user_id} has download count {download_count}")
 
-    if resolution in ["1440p", "2160p"]:
-        logging.info("Resolution is 1440p or 2160p, using Adtival")
-        encoded_file_name = urllib.parse.quote(file_name)
-        long_url = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
-        download_link = shorten_url(long_url)
-    elif resolution == "1080p" and download_count == 0:
-        logging.info("First 1080p download, not using Adtival")
+    if user_id in admin_user_ids:
+        logging.info(f"User {user_id} is an admin, bypassing Adtival")
         encoded_file_name = urllib.parse.quote(file_name)
         download_link = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
-    elif resolution == "1080p":
-        logging.info("Subsequent 1080p download, using Adtival")
-        encoded_file_name = urllib.parse.quote(file_name)
-        long_url = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
-        download_link = shorten_url(long_url)
     else:
-        if download_count < 2:
-            logging.info("First two downloads for other resolutions, not using Adtival")
-            encoded_file_name = urllib.parse.quote(file_name)
-            download_link = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
-        else:
-            logging.info("Subsequent downloads for other resolutions, using Adtival")
+        download_count = get_download_count(conn, user_id)
+        logging.info(f"User {user_id} has download count {download_count}")
+
+        if resolution in ["1440p", "2160p"]:
+            logging.info("Resolution is 1440p or 2160p, using Adtival")
             encoded_file_name = urllib.parse.quote(file_name)
             long_url = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
             download_link = shorten_url(long_url)
+        elif resolution == "1080p" and download_count == 0:
+            logging.info("First 1080p download, not using Adtival")
+            encoded_file_name = urllib.parse.quote(file_name)
+            download_link = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
+        elif resolution == "1080p":
+            logging.info("Subsequent 1080p download, using Adtival")
+            encoded_file_name = urllib.parse.quote(file_name)
+            long_url = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
+            download_link = shorten_url(long_url)
+        else:
+            if download_count < 2:
+                logging.info("First two downloads for other resolutions, not using Adtival")
+                encoded_file_name = urllib.parse.quote(file_name)
+                download_link = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
+            else:
+                logging.info("Subsequent downloads for other resolutions, using Adtival")
+                encoded_file_name = urllib.parse.quote(file_name)
+                long_url = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
+                download_link = shorten_url(long_url)
 
-    increment_download_count(conn, user_id)
+        increment_download_count(conn, user_id)
     conn.close()
     logging.info(f"Generated download link: {download_link}")
-
     return download_link
 
 @bot.message_handler(commands=['download'])
@@ -569,8 +576,19 @@ def send_video_with_retries(file_path, chat_id, retries=3):
             time.sleep(5)
     return False
 
-# Start polling for the bot
-threading.Thread(target=bot.polling, kwargs={'none_stop': True}).start()
+def start_polling():
+    while True:
+        try:
+            bot.polling(none_stop=True, timeout=60)
+        except requests.exceptions.ReadTimeout as e:
+            logging.error(f"ReadTimeoutError: {e}, retrying in 15 seconds...")
+            time.sleep(15)
+        except Exception as e:
+            logging.error(f"Exception occurred: {e}, retrying in 15 seconds...")
+            time.sleep(15)
+
+# Start polling for the bot in a thread with retry mechanism
+threading.Thread(target=start_polling).start()
 
 # Flask routes
 @app.route('/')
