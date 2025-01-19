@@ -337,6 +337,16 @@ def handle_dailymotion_video(url, message):
         logging.error(f"Error fetching video qualities: {e}")
         bot.reply_to(message, f"Failed to fetch video qualities. Error: {e}")
 
+def check_tiktok_accessibility():
+    try:
+        response = requests.get("https://www.tiktok.com")
+        if response.status_code == 200:
+            print("TikTok is accessible")
+        else:
+            print("TikTok is not accessible")
+    except requests.exceptions.RequestException as e:
+        print(f"Network error: {e}")
+
 def handle_tiktok_video(url, message):
     try:
         check_tiktok_accessibility()  # Check if TikTok is accessible
