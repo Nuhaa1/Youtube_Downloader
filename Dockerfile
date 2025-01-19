@@ -6,9 +6,11 @@ WORKDIR /app
 # Copy the current directory contents into the container at /app
 COPY . /app
 
-# Install pip and dependencies in one run statement
-RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
+# Install pip
+RUN pip install --upgrade pip
+
+# Install dependencies from requirements.txt
+RUN pip install -r requirements.txt
 
 # Install ffmpeg
 RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
