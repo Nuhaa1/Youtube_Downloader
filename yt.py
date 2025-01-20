@@ -337,15 +337,19 @@ def handle_dailymotion_video(url, message):
         logging.error(f"Error fetching video qualities: {e}")
         bot.reply_to(message, f"Failed to fetch video qualities. Error: {e}")
 
+# Check TikTok accessibility
 def check_tiktok_accessibility():
     try:
         response = requests.get("https://www.tiktok.com")
         if response.status_code == 200:
-            print("TikTok is accessible")
+            logging.debug("TikTok is accessible")
         else:
-            print("TikTok is not accessible")
+            logging.debug("TikTok is not accessible")
     except requests.exceptions.RequestException as e:
-        print(f"Network error: {e}")
+        logging.error(f"Network error: {e}")
+
+# Call the network check function
+check_tiktok_accessibility()
 
 def handle_tiktok_video(url, message):
     chat_id = message.chat.id
@@ -410,6 +414,15 @@ def handle_tiktok_video(url, message):
     except Exception as e:
         logging.error(f"Unexpected error during video processing: {e}", exc_info=True)
         bot.send_message(chat_id, f"Failed to download video. Error: {e}")
+
+# For testing network connectivity on Railway, you can add the following:
+def test_network_connectivity():
+    try:
+        import subprocess
+        result = subprocess.run(['ping', '-c', '4', 'tiktok.com'], capture_output=True, text=True)
+        logging.debug(f"Ping result: {result.stdout}")
+    except Exception as e:
+        logging.error(f"Error testing network connectivity: {e}")
 
 @bot.callback_query_handler(func=lambda call: True)
 def handle_quality_callback(call):
@@ -557,7 +570,12 @@ def sanitize_and_encode_filename(filename):
 
 def setup_database():
     conn = connect_db()
-    create_user_downloads_table(conn)
+    if conn:
+        create_user_downloads_table(conn)
+        conn.close()
+        logging.debug("Database setup completed successfully")
+    else:
+        logging.error("Failed to set up database")
 
 # Call this function at the start of your script
 setup_database()
