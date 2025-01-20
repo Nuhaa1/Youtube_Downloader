@@ -373,7 +373,7 @@ def handle_tiktok_video(url, message):
             },
             'verbose': True,
             'logger': logging.getLogger(),
-            'proxy': 'http://your_proxy_here'  # Use a proxy if necessary
+            'proxy': 'socks4://85.236.158.182:31152'  # Use a proxy if necessary
         }
 
         with YoutubeDL(ydl_opts) as ydl:
