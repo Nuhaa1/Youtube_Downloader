@@ -372,8 +372,7 @@ def handle_tiktok_video(url, message):
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) Gecko/20100101 Firefox/98.0',
             },
             'verbose': True,
-            'logger': logging.getLogger(),
-            'proxy': 'socks4://85.236.158.182:31152'  # Use a proxy if necessary
+            'logger': logging.getLogger()
         }
 
         with YoutubeDL(ydl_opts) as ydl:
