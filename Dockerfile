@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade yt-dlp
 
-EXPOSE 5000  # Ensure the exposed port matches the one in your Flask app
+# Ensure the exposed port matches the one in your Flask app
+EXPOSE 5000
 
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "yt:app"]
