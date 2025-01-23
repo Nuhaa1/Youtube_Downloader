@@ -352,42 +352,20 @@ def check_tiktok_accessibility():
 check_tiktok_accessibility()
 
 def handle_tiktok_video(url, message):
-    chat_id = message.chat.id
     try:
-        logging.debug(f"Starting to download TikTok video: {url}")
-
         ydl_opts = {
             'format': 'best',
             'outtmpl': f'{DOWNLOAD_PATH}%(title)s.%(ext)s',
-            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) Gecko/20100101 Firefox/98.0',
-            'http_headers': {
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.9',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Cache-Control': 'max-age=0',
-                'Connection': 'keep-alive',
-                'Pragma': 'no-cache',
-                'Upgrade-Insecure-Requests': '1',
-                'Referer': 'https://www.tiktok.com/',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) Gecko/20100101 Firefox/98.0',
-            },
-            'verbose': True,
-            'logger': logging.getLogger()
         }
 
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
-            logging.debug(f"Video info: {info}")
-
             file_path = ydl.prepare_filename(info)
-            logging.debug(f"File path: {file_path}")
-
             base_filepath, ext = os.path.splitext(file_path)
             unique_filepath = get_unique_filepath(base_filepath, ext)
 
             if os.path.exists(file_path):
                 os.rename(file_path, unique_filepath)
-                logging.debug(f"File renamed to: {unique_filepath}")
 
             file_name = os.path.basename(unique_filepath)
 
@@ -396,24 +374,25 @@ def handle_tiktok_video(url, message):
                 logging.debug(f"Downloaded file size: {file_size}")
 
                 if file_size <= TELEGRAM_UPLOAD_LIMIT:
-                    if send_video_with_retries(unique_filepath, chat_id):
+                    if send_video_with_retries(unique_filepath, message.chat.id):
                         os.remove(unique_filepath)
                         logging.debug(f"Deleted file after upload: {unique_filepath}")
                     else:
                         logging.error("Failed to upload video after multiple attempts")
-                        bot.send_message(chat_id, "Failed to upload video after multiple attempts.")
+                        bot.send_message(message.chat.id, "Failed to upload video after multiple attempts.")
                 else:
-                    send_download_button(chat_id, file_name)
-                    threading.Thread(target=delete_file_after_delay, args=(unique_filepath, chat_id)).start()
+                    encoded_file_name = urllib.parse.quote(file_name)
+                    download_link = f"web-production-fefcf.up.railway.app/downloads/{encoded_file_name}"
+                    bot.send_message(call.message.chat.id, f"The file is too large to upload to Telegram. You can download it here:\n{download_link}")
+
+                    bot.send_message(message.chat.id, "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes.")
+                    threading.Thread(target=delete_file_after_delay, args=(unique_filepath, message.chat.id)).start()
             else:
                 logging.error(f"File not found: {unique_filepath}")
-                bot.send_message(chat_id, "Failed to download video. File not found after download.")
-    except yt_dlp.utils.ExtractorError as e:
-        logging.error(f"Error during video processing: {e}", exc_info=True)
-        bot.send_message(chat_id, "Failed to download video. Currently, TikTok downloads are unavailable due to regional restrictions. Our servers are located in the US, where TikTok has imposed stricter access controls. This means we're currently unable to download TikTok videos. We apologize for the inconvenience and appreciate your understanding.")
+                bot.send_message(message.chat.id, "Failed to download video. File not found after download.")
     except Exception as e:
-        logging.error(f"Unexpected error during video processing: {e}", exc_info=True)
-        bot.send_message(chat_id, f"Failed to download video. Error: {e}")
+        logging.error(f"Error during video processing: {e}")
+        bot.send_message(message.chat.id, f"Failed to download video. Error: {e}")
 
 # For testing network connectivity on Railway, you can add the following:
 def test_network_connectivity():
