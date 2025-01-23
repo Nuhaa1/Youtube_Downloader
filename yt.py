@@ -75,7 +75,7 @@ def get_verification_url(filepath):
     api_key = os.getenv('ADTIVAL_API_TOKEN')  # Ensure your API token is correctly set in the environment variables
     params = {
         'api': api_key,
-        'url': f"https://web-production-f9ab3.up.railway.app/downloads/{filepath}",  # Use your actual domain
+        'url': f"https://web-production-fefcf.up.railway.app/downloads/{filepath}",  # Use your actual domain
         'format': 'json'
     }
     response = requests.get(adtival_api_url, params=params)
@@ -88,7 +88,7 @@ def get_verification_url(filepath):
         return None
 
 # Test the URL shortening function
-short_url = shorten_url("https://web-production-f9ab3.up.railway.app/downloads/samplefile.mp4")
+short_url = shorten_url("https://web-production-fefcf.up.railway.app/downloads/samplefile.mp4")
 print("Shortened URL:", short_url)
 
 def get_unique_filepath(base_filepath, ext):
@@ -234,7 +234,7 @@ def get_download_link(file_name, resolution, user_id):
     if user_id in admin_user_ids:
         logging.info(f"User {user_id} is an admin, bypassing Adtival")
         encoded_file_name = urllib.parse.quote(file_name)
-        download_link = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
+        download_link = f"https://web-production-fefcf.up.railway.app/downloads/{encoded_file_name}"
     else:
         download_count = get_download_count(conn, user_id)
         logging.info(f"User {user_id} has download count {download_count}")
@@ -242,26 +242,26 @@ def get_download_link(file_name, resolution, user_id):
         if resolution in ["1440p", "2160p"]:
             logging.info("Resolution is 1440p or 2160p, using Adtival")
             encoded_file_name = urllib.parse.quote(file_name)
-            long_url = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
+            long_url = f"https://web-production-fefcf.up.railway.app/downloads/{encoded_file_name}"
             download_link = shorten_url(long_url)
         elif resolution == "1080p" and download_count == 0:
             logging.info("First 1080p download, not using Adtival")
             encoded_file_name = urllib.parse.quote(file_name)
-            download_link = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
+            download_link = f"https://web-production-fefcf.up.railway.app/downloads/{encoded_file_name}"
         elif resolution == "1080p":
             logging.info("Subsequent 1080p download, using Adtival")
             encoded_file_name = urllib.parse.quote(file_name)
-            long_url = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
+            long_url = f"https://web-production-fefcf.up.railway.app/downloads/{encoded_file_name}"
             download_link = shorten_url(long_url)
         else:
             if download_count < 2:
                 logging.info("First two downloads for other resolutions, not using Adtival")
                 encoded_file_name = urllib.parse.quote(file_name)
-                download_link = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
+                download_link = f"https://web-production-fefcf.up.railway.app/downloads/{encoded_file_name}"
             else:
                 logging.info("Subsequent downloads for other resolutions, using Adtival")
                 encoded_file_name = urllib.parse.quote(file_name)
-                long_url = f"https://web-production-f9ab3.up.railway.app/downloads/{encoded_file_name}"
+                long_url = f"https://web-production-fefcf.up.railway.app/downloads/{encoded_file_name}"
                 download_link = shorten_url(long_url)
 
         increment_download_count(conn, user_id)
