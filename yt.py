@@ -275,7 +275,12 @@ def handle_instagram_video(url, message):
 
 def get_direct_facebook_link(watch_url):
     session = requests.Session()
-    response = session.head(watch_url, allow_redirects=True)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+    response = session.head(watch_url, allow_redirects=True, headers=headers)
+    if len(response.history) > 30:
+        raise Exception("Exceeded 30 redirects.")
     return response.url
 
 def handle_facebook_video(url, message):
