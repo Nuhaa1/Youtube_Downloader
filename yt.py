@@ -2,9 +2,6 @@ import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from yt_dlp import YoutubeDL
 import instaloader
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service as ChromeService
-from webdriver_manager.chrome import ChromeDriverManager
 import os
 import requests
 import json
@@ -37,9 +34,7 @@ if not os.path.exists(DOWNLOAD_PATH):
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 
 # Path to your cookies file in Railway project
-COOKIES_PATH = "/app/cookies.txt" #YoutubeCookies
-FACEBOOK_COOKIES_PATH = "/app/facebook_cookies.txt" 
-
+COOKIES_PATH = "/app/cookies.txt"
 
 # Initialize Flask
 app = Flask(__name__)
@@ -276,58 +271,62 @@ def handle_instagram_video(url, message):
         logging.error(f"Error downloading Instagram video: {e}")
         bot.send_message(message.chat.id, f"Failed to download video. Error: {e}")
 
-# Function to get the direct Facebook video link using Selenium
-def get_direct_facebook_link_selenium(watch_url):
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-
-    driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
-    driver.get(watch_url)
-
-    final_url = driver.current_url
-    driver.quit()
-    return final_url
-
 def handle_facebook_video(url, message):
+    chat_id = message.chat.id
+    
+    # Check for shortened Facebook links and send a message to use direct links
+    if 'fb.watch' in url or 'bit.ly' in url or 't.co' in url or 'tinyurl.com' in url:
+        bot.send_message(chat_id, "Please provide a direct Facebook video link like 'https://www.facebook.com/watch/?v=...'.")
+        return
+
     try:
-        # Check if the URL is an fb.watch link and resolve it to the direct link using Selenium
-        if 'fb.watch' in url:
-            url = get_direct_facebook_link_selenium(url)
-        
+        logging.debug(f"Starting to download Facebook video: {url}")
+
         ydl_opts = {
             'format': 'best',
             'outtmpl': os.path.join(DOWNLOAD_PATH, '%(title)s.%(ext)s'),
-            'cookiefile': FACEBOOK_COOKIES_PATH,  # Use the cookies file specifically for Facebook
+            'cookiefile': COOKIES_PATH,  # Path to your cookies file
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) Gecko/20100101 Firefox/98.0'
+            },
+            'verbose': True,
+            'logger': logging.getLogger()
         }
 
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             file_path = ydl.prepare_filename(info)
+            logging.debug(f"File path: {file_path}")
+
             file_name = os.path.basename(file_path)
-            
+
             if os.path.exists(file_path):
                 file_size = os.path.getsize(file_path)
                 logging.debug(f"Downloaded file size: {file_size}")
 
                 if file_size <= TELEGRAM_UPLOAD_LIMIT:
-                    if send_video_with_retries(file_path, message.chat.id):
+                    if send_video_with_retries(file_path, chat_id):
                         os.remove(file_path)
                         logging.debug(f"Deleted file after upload: {file_path}")
                     else:
                         logging.error("Failed to upload video after multiple attempts")
-                        bot.send_message(message.chat.id, "Failed to upload video after multiple attempts.")
+                        bot.send_message(chat_id, "Failed to upload video after multiple attempts.")
                 else:
-                    send_download_button(message.chat.id, file_name, "original", message.chat.id)
-                    threading.Thread(target=delete_file_after_delay, args=(file_path, message.chat.id)).start()
+                    send_download_button(chat_id, file_name, "original", message.chat.id)
+                    threading.Thread(target=delete_file_after_delay, args=(file_path, chat_id)).start()
             else:
                 logging.error(f"File not found: {file_path}")
-                bot.send_message(message.chat.id, "Failed to download video. File not found after download.")
+                bot.send_message(chat_id, "Failed to download video. File not found after download.")
+    except yt_dlp.utils.ExtractorError as e:
+        logging.error(f"Error during video processing: {e}", exc_info=True)
+        bot.send_message(chat_id, "Failed to download video. Please try again later.")
     except Exception as e:
-        logging.error(f"Error downloading Facebook video: {e}")
-        bot.send_message(message.chat.id, f"Failed to download video. Error: {e}")
-        
+        logging.error(f"Unexpected error during video processing: {e}", exc_info=True)
+        bot.send_message(chat_id, f"Failed to download video. Error: {e}")
+
+# Example usage:
+# handle_facebook_video('https://www.facebook.com/watch/?v=7851753391602010', your_message_object)
+
 def get_download_link(file_name, resolution, user_id):
     conn = connect_db()
     logging.info(f"Entered get_download_link for user {user_id}, resolution {resolution}")
