@@ -34,7 +34,9 @@ if not os.path.exists(DOWNLOAD_PATH):
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 
 # Path to your cookies file in Railway project
-COOKIES_PATH = "/app/cookies.txt"
+COOKIES_PATH = "/app/cookies.txt" #YoutubeCookies
+FACEBOOK_COOKIES_PATH = "/app/facebook_cookies.txt" 
+
 
 # Initialize Flask
 app = Flask(__name__)
@@ -276,6 +278,7 @@ def handle_facebook_video(url, message):
         ydl_opts = {
             'format': 'best',
             'outtmpl': os.path.join(DOWNLOAD_PATH, '%(title)s.%(ext)s'),
+            'cookiefile': FACEBOOK_COOKIES_PATH,  # Use the cookies file specifically for Facebook
         }
 
         with YoutubeDL(ydl_opts) as ydl:
