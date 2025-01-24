@@ -2,6 +2,9 @@ import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from yt_dlp import YoutubeDL
 import instaloader
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
 import os
 import requests
 import json
@@ -273,21 +276,25 @@ def handle_instagram_video(url, message):
         logging.error(f"Error downloading Instagram video: {e}")
         bot.send_message(message.chat.id, f"Failed to download video. Error: {e}")
 
-def get_direct_facebook_link(watch_url):
-    session = requests.Session()
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-    }
-    response = session.head(watch_url, allow_redirects=True, headers=headers)
-    if len(response.history) > 30:
-        raise Exception("Exceeded 30 redirects.")
-    return response.url
+# Function to get the direct Facebook video link using Selenium
+def get_direct_facebook_link_selenium(watch_url):
+    options = webdriver.ChromeOptions()
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+
+    driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
+    driver.get(watch_url)
+
+    final_url = driver.current_url
+    driver.quit()
+    return final_url
 
 def handle_facebook_video(url, message):
     try:
-        # Check if the URL is an fb.watch link and resolve it to the direct link
+        # Check if the URL is an fb.watch link and resolve it to the direct link using Selenium
         if 'fb.watch' in url:
-            url = get_direct_facebook_link(url)
+            url = get_direct_facebook_link_selenium(url)
         
         ydl_opts = {
             'format': 'best',
