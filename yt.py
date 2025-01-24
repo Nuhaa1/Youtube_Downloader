@@ -274,12 +274,10 @@ def handle_instagram_video(url, message):
         logging.error(f"Error downloading Instagram video: {e}")
         bot.send_message(message.chat.id, f"Failed to download video. Error: {e}")
 
-# Function to sanitize and truncate filenames
-def sanitize_filename(title):
-    # Remove invalid and special characters
-    title = re.sub(r'[\\/*?:"<>|#]', "", title)
-    # Truncate the filename if it exceeds the maximum length
-    return title[:MAX_FILENAME_LENGTH]
+# Function to get a safe filename
+def get_safe_filename(prefix="video"):
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return f"{prefix}_{timestamp}"
 
 def handle_facebook_video(url, message):
     chat_id = message.chat.id
@@ -292,9 +290,10 @@ def handle_facebook_video(url, message):
     try:
         logging.debug(f"Starting to download Facebook video: {url}")
 
+        safe_filename = get_safe_filename("facebook_video")
         ydl_opts = {
             'format': 'best',
-            'outtmpl': f'{DOWNLOAD_PATH}{sanitize_filename("%(title)s")}.%(ext)s',
+            'outtmpl': os.path.join(DOWNLOAD_PATH, f'{safe_filename}.%(ext)s'),
             'cookiefile': COOKIES_PATH,  # Path to your cookies file
             'http_headers': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) Gecko/20100101 Firefox/98.0'
@@ -305,9 +304,8 @@ def handle_facebook_video(url, message):
 
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
-            sanitized_title = sanitize_filename(info['title'])
             ext = info['ext']
-            file_path = os.path.join(DOWNLOAD_PATH, f"{sanitized_title}.{ext}")
+            file_path = os.path.join(DOWNLOAD_PATH, f"{safe_filename}.{ext}")
             base_filepath, ext = os.path.splitext(file_path)
             unique_filepath = get_unique_filepath(base_filepath, ext)
 
@@ -469,12 +467,10 @@ def check_tiktok_accessibility():
 # Call the network check function
 check_tiktok_accessibility()
 
-# Function to sanitize and truncate filenames
-def sanitize_filename(title):
-    # Remove invalid and special characters
-    title = re.sub(r'[\\/*?:"<>|#]', "", title)
-    # Truncate the filename if it exceeds the maximum length
-    return title[:MAX_FILENAME_LENGTH]
+# Function to get a safe filename
+def get_safe_filename(prefix="video"):
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return f"{prefix}_{timestamp}"
 
 def handle_tiktok_video(url, message):
     chat_id = message.chat.id
@@ -482,16 +478,16 @@ def handle_tiktok_video(url, message):
     try:
         logging.debug(f"Starting to download TikTok video: {url}")
 
+        safe_filename = get_safe_filename("tiktok_video")
         ydl_opts = {
             'format': 'best',
-            'outtmpl': f'{DOWNLOAD_PATH}{sanitize_filename("%(title)s")}.%(ext)s'
+            'outtmpl': os.path.join(DOWNLOAD_PATH, f'{safe_filename}.%(ext)s')
         }
 
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
-            sanitized_title = sanitize_filename(info['title'])
             ext = info['ext']
-            file_path = os.path.join(DOWNLOAD_PATH, f"{sanitized_title}.{ext}")
+            file_path = os.path.join(DOWNLOAD_PATH, f"{safe_filename}.{ext}")
             base_filepath, ext = os.path.splitext(file_path)
             unique_filepath = get_unique_filepath(base_filepath, ext)
 
