@@ -6,3 +6,4 @@ pyTelegramBotAPI
 python-dotenv
 Flask==2.2.5
 gunicorn==22.0.0
+instaloader
