@@ -2,6 +2,7 @@ import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from yt_dlp import YoutubeDL
 import instaloader
+from pytube import YouTube
 import os
 import requests
 import json
@@ -180,8 +181,10 @@ def handle_link(message):
         handle_tiktok_video(url, message)
     elif 'instagram.com' in url:
         handle_instagram_video(url, message)
+    elif 'facebook.com' in url or 'fb.watch' in url:
+        handle_facebook_video(url, message)
     else:
-        bot.reply_to(message, "Please send a valid YouTube, Dailymotion, TikTok, or Instagram link.")
+        bot.reply_to(message, "Please send a valid YouTube, Dailymotion, TikTok, Instagram, or Facebook link.")
 
 def handle_youtube_video(url, message):
     try:
@@ -269,6 +272,40 @@ def handle_instagram_video(url, message):
         logging.error(f"Error downloading Instagram video: {e}")
         bot.send_message(message.chat.id, f"Failed to download video. Error: {e}")
 
+def handle_facebook_video(url, message):
+    try:
+        yt = YouTube(url)
+        video = yt.streams.filter(progressive=True, file_extension='mp4').first()
+
+        if video:
+            file_name = f"{sanitize_filename(yt.title)}.mp4"
+            file_path = os.path.join(DOWNLOAD_PATH, file_name)
+            video.download(output_path=DOWNLOAD_PATH, filename=file_name)
+
+            # Check file size and handle accordingly
+            if os.path.exists(file_path):
+                file_size = os.path.getsize(file_path)
+                logging.debug(f"Downloaded file size: {file_size}")
+
+                if file_size <= TELEGRAM_UPLOAD_LIMIT:
+                    if send_video_with_retries(file_path, message.chat.id):
+                        os.remove(file_path)
+                        logging.debug(f"Deleted file after upload: {file_path}")
+                    else:
+                        logging.error("Failed to upload video after multiple attempts")
+                        bot.send_message(message.chat.id, "Failed to upload video after multiple attempts.")
+                else:
+                    send_download_button(message.chat.id, file_name, "original", message.chat.id)
+                    threading.Thread(target=delete_file_after_delay, args=(file_path, message.chat.id)).start()
+            else:
+                logging.error(f"File not found: {file_path}")
+                bot.send_message(message.chat.id, "Failed to download video. File not found after download.")
+        else:
+            bot.send_message(message.chat.id, "Failed to find a suitable video stream.")
+    except Exception as e:
+        logging.error(f"Error downloading Facebook video: {e}")
+        bot.send_message(message.chat.id, f"Failed to download video. Error: {e}")
+        
 def get_download_link(file_name, resolution, user_id):
     conn = connect_db()
     logging.info(f"Entered get_download_link for user {user_id}, resolution {resolution}")
