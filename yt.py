@@ -279,9 +279,7 @@ def sanitize_filename(title):
     # Remove invalid and special characters
     title = re.sub(r'[\\/*?:"<>|#]', "", title)
     # Truncate the filename if it exceeds the maximum length
-    if len(title) > MAX_FILENAME_LENGTH:
-        title = title[:MAX_FILENAME_LENGTH]
-    return title
+    return title[:MAX_FILENAME_LENGTH]
 
 def handle_facebook_video(url, message):
     chat_id = message.chat.id
@@ -471,19 +469,29 @@ def check_tiktok_accessibility():
 # Call the network check function
 check_tiktok_accessibility()
 
+# Function to sanitize and truncate filenames
+def sanitize_filename(title):
+    # Remove invalid and special characters
+    title = re.sub(r'[\\/*?:"<>|#]', "", title)
+    # Truncate the filename if it exceeds the maximum length
+    return title[:MAX_FILENAME_LENGTH]
+
 def handle_tiktok_video(url, message):
     chat_id = message.chat.id
 
     try:
+        logging.debug(f"Starting to download TikTok video: {url}")
+
         ydl_opts = {
             'format': 'best',
-            'outtmpl': f'{DOWNLOAD_PATH}%(title)s.%(ext)s',
+            'outtmpl': f'{DOWNLOAD_PATH}{sanitize_filename("%(title)s")}.%(ext)s'
         }
 
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
-            file_path = ydl.prepare_filename(info)
-            file_path = truncate_filename(file_path, MAX_FILENAME_LENGTH)  # Truncate file name if too long
+            sanitized_title = sanitize_filename(info['title'])
+            ext = info['ext']
+            file_path = os.path.join(DOWNLOAD_PATH, f"{sanitized_title}.{ext}")
             base_filepath, ext = os.path.splitext(file_path)
             unique_filepath = get_unique_filepath(base_filepath, ext)
 
@@ -517,6 +525,7 @@ def handle_tiktok_video(url, message):
         logging.error(f"Error during video processing: {e}")
         bot.send_message(chat_id, f"Failed to download video. Error: {e}")
 
+# Example usage:
 # handle_tiktok_video('https://www.tiktok.com/@user/video/1234567890', your_message_object)
 
 # For testing network connectivity on Railway, you can add the following:
