@@ -274,6 +274,15 @@ def handle_instagram_video(url, message):
         logging.error(f"Error downloading Instagram video: {e}")
         bot.send_message(message.chat.id, f"Failed to download video. Error: {e}")
 
+# Function to sanitize and truncate filenames
+def sanitize_filename(title):
+    # Remove invalid and special characters
+    title = re.sub(r'[\\/*?:"<>|#]', "", title)
+    # Truncate the filename if it exceeds the maximum length
+    if len(title) > MAX_FILENAME_LENGTH:
+        title = title[:MAX_FILENAME_LENGTH]
+    return title
+
 def handle_facebook_video(url, message):
     chat_id = message.chat.id
     
@@ -287,7 +296,7 @@ def handle_facebook_video(url, message):
 
         ydl_opts = {
             'format': 'best',
-            'outtmpl': f'{DOWNLOAD_PATH}%(title)s.%(ext)s',
+            'outtmpl': f'{DOWNLOAD_PATH}{sanitize_filename("%(title)s")}.%(ext)s',
             'cookiefile': COOKIES_PATH,  # Path to your cookies file
             'http_headers': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) Gecko/20100101 Firefox/98.0'
@@ -334,10 +343,8 @@ def handle_facebook_video(url, message):
         logging.error(f"Error during video processing: {e}")
         bot.send_message(chat_id, f"Failed to download video. Error: {e}")
 
-def sanitize_filename(title):
-    # Remove invalid and special characters
-    title = re.sub(r'[\\/*?:"<>|#]', "", title)
-    return title[:MAX_FILENAME_LENGTH]
+# Example usage:
+# handle_facebook_video('https://www.facebook.com/watch/?v=7851753391602010', your_message_object)
 
 def get_download_link(file_name, resolution, user_id):
     conn = connect_db()
