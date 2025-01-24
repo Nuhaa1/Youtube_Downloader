@@ -285,7 +285,7 @@ def get_direct_facebook_link(watch_url):
 
 def handle_facebook_video(url, message):
     try:
-        # Normalize fb.watch URL to direct link if necessary
+        # Check if the URL is an fb.watch link and resolve it to the direct link
         if 'fb.watch' in url:
             url = get_direct_facebook_link(url)
         
