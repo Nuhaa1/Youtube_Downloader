@@ -273,8 +273,17 @@ def handle_instagram_video(url, message):
         logging.error(f"Error downloading Instagram video: {e}")
         bot.send_message(message.chat.id, f"Failed to download video. Error: {e}")
 
+def get_direct_facebook_link(watch_url):
+    session = requests.Session()
+    response = session.head(watch_url, allow_redirects=True)
+    return response.url
+
 def handle_facebook_video(url, message):
     try:
+        # Normalize fb.watch URL to direct link if necessary
+        if 'fb.watch' in url:
+            url = get_direct_facebook_link(url)
+        
         ydl_opts = {
             'format': 'best',
             'outtmpl': os.path.join(DOWNLOAD_PATH, '%(title)s.%(ext)s'),
