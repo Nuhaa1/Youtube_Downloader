@@ -274,13 +274,6 @@ def handle_instagram_video(url, message):
         logging.error(f"Error downloading Instagram video: {e}")
         bot.send_message(message.chat.id, f"Failed to download video. Error: {e}")
 
-# Helper function to truncate the file name
-def truncate_filename(filename, max_length):
-    if len(filename) > max_length:
-        name, ext = os.path.splitext(filename)
-        return name[:max_length - len(ext)] + ext
-    return filename
-
 def handle_facebook_video(url, message):
     chat_id = message.chat.id
     
@@ -290,11 +283,14 @@ def handle_facebook_video(url, message):
         return
 
     try:
-        logging.debug(f"Starting to download Facebook video: {url}")
+        def sanitize_filename(title):
+            # Sanitize and truncate the filename to a safe length
+            title = re.sub(r'[\\/*?:"<>|]', "", title)
+            return title[:MAX_FILENAME_LENGTH]
 
         ydl_opts = {
             'format': 'best',
-            'outtmpl': os.path.join(DOWNLOAD_PATH, '%(title)s.%(ext)s'),
+            'outtmpl': f'{DOWNLOAD_PATH}{sanitize_filename("%(title)s")}.%(ext)s',
             'cookiefile': COOKIES_PATH,  # Path to your cookies file
             'http_headers': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) Gecko/20100101 Firefox/98.0'
@@ -306,34 +302,45 @@ def handle_facebook_video(url, message):
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             file_path = ydl.prepare_filename(info)
-            file_path = truncate_filename(file_path, MAX_FILENAME_LENGTH)  # Truncate file name if too long
-            logging.debug(f"File path: {file_path}")
-
-            file_name = os.path.basename(file_path)
+            base_filepath, ext = os.path.splitext(file_path)
+            unique_filepath = get_unique_filepath(base_filepath, ext)
 
             if os.path.exists(file_path):
-                file_size = os.path.getsize(file_path)
+                os.rename(file_path, unique_filepath)
+
+            file_name = os.path.basename(unique_filepath)
+
+            if os.path.exists(unique_filepath):
+                file_size = os.path.getsize(unique_filepath)
                 logging.debug(f"Downloaded file size: {file_size}")
 
                 if file_size <= TELEGRAM_UPLOAD_LIMIT:
-                    if send_video_with_retries(file_path, chat_id):
-                        os.remove(file_path)
-                        logging.debug(f"Deleted file after upload: {file_path}")
+                    if send_video_with_retries(unique_filepath, chat_id):
+                        os.remove(unique_filepath)
+                        logging.debug(f"Deleted file after upload: {unique_filepath}")
                     else:
                         logging.error("Failed to upload video after multiple attempts")
                         bot.send_message(chat_id, "Failed to upload video after multiple attempts.")
                 else:
-                    send_download_button(chat_id, file_name, "original", message.chat.id)
-                    threading.Thread(target=delete_file_after_delay, args=(file_path, chat_id)).start()
+                    encoded_file_name = urllib.parse.quote(file_name)
+                    download_link = f"web-production-fefcf.up.railway.app/downloads/{encoded_file_name}"
+                    bot.send_message(chat_id, f"The file is too large to upload to Telegram. You can download it here:\n{download_link}")
+
+                    bot.send_message(chat_id, "Please download the file within 30 minutes. The file will be deleted from the server after 30 minutes.")
+                    threading.Thread(target=delete_file_after_delay, args=(unique_filepath, chat_id)).start()
             else:
-                logging.error(f"File not found: {file_path}")
+                logging.error(f"File not found: {unique_filepath}")
                 bot.send_message(chat_id, "Failed to download video. File not found after download.")
-    except yt_dlp.utils.ExtractorError as e:
-        logging.error(f"Error during video processing: {e}", exc_info=True)
-        bot.send_message(chat_id, "Failed to download video. Please try again later.")
     except Exception as e:
-        logging.error(f"Unexpected error during video processing: {e}", exc_info=True)
+        logging.error(f"Error during video processing: {e}")
         bot.send_message(chat_id, f"Failed to download video. Error: {e}")
+
+# Helper function to truncate the file name
+def truncate_filename(filename, max_length):
+    if len(filename) > max_length:
+        name, ext = os.path.splitext(filename)
+        return name[:max_length - len(ext)] + ext
+    return filename
 
 # Example usage:
 # handle_facebook_video('https://www.facebook.com/watch/?v=7851753391602010', your_message_object)
