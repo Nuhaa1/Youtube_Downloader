@@ -274,15 +274,16 @@ def handle_instagram_video(url, message):
 
 def handle_facebook_video(url, message):
     try:
-        yt = YouTube(url)
-        video = yt.streams.filter(progressive=True, file_extension='mp4').first()
+        ydl_opts = {
+            'format': 'best',
+            'outtmpl': os.path.join(DOWNLOAD_PATH, '%(title)s.%(ext)s'),
+        }
 
-        if video:
-            file_name = f"{sanitize_filename(yt.title)}.mp4"
-            file_path = os.path.join(DOWNLOAD_PATH, file_name)
-            video.download(output_path=DOWNLOAD_PATH, filename=file_name)
-
-            # Check file size and handle accordingly
+        with YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            file_path = ydl.prepare_filename(info)
+            file_name = os.path.basename(file_path)
+            
             if os.path.exists(file_path):
                 file_size = os.path.getsize(file_path)
                 logging.debug(f"Downloaded file size: {file_size}")
@@ -300,8 +301,6 @@ def handle_facebook_video(url, message):
             else:
                 logging.error(f"File not found: {file_path}")
                 bot.send_message(message.chat.id, "Failed to download video. File not found after download.")
-        else:
-            bot.send_message(message.chat.id, "Failed to find a suitable video stream.")
     except Exception as e:
         logging.error(f"Error downloading Facebook video: {e}")
         bot.send_message(message.chat.id, f"Failed to download video. Error: {e}")
