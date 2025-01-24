@@ -1,6 +1,7 @@
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from yt_dlp import YoutubeDL
+import instaloader
 import os
 import requests
 import json
@@ -177,8 +178,10 @@ def handle_link(message):
         handle_dailymotion_video(url, message)
     elif 'tiktok.com' in url:
         handle_tiktok_video(url, message)
+    elif 'instagram.com' in url:
+        handle_instagram_video(url, message)
     else:
-        bot.reply_to(message, "Please send a valid YouTube, Dailymotion, or TikTok link.")
+        bot.reply_to(message, "Please send a valid YouTube, Dailymotion, TikTok, or Instagram link.")
 
 def handle_youtube_video(url, message):
     try:
@@ -224,7 +227,47 @@ def handle_youtube_video(url, message):
         logging.error(f"Error fetching video qualities: {e}")
         bot.reply_to(message, f"Failed to fetch video qualities. Error: {e}")
 
-admin_user_ids = [7951420571, 987654321]  # Replace with actual user IDs
+def handle_instagram_video(url, message):
+    try:
+        L = instaloader.Instaloader()
+        post = instaloader.Post.from_shortcode(L.context, url.split('/')[-2])
+        
+        video_url = post.video_url
+        logging.debug(f"Instagram video URL: {video_url}")
+
+        # Download the video
+        response = requests.get(video_url)
+        if response.status_code == 200:
+            file_name = f"{sanitize_filename(post.shortcode)}.mp4"
+            file_path = os.path.join(DOWNLOAD_PATH, file_name)
+            
+            with open(file_path, 'wb') as video_file:
+                video_file.write(response.content)
+
+            # Check file size and handle accordingly
+            if os.path.exists(file_path):
+                file_size = os.path.getsize(file_path)
+                logging.debug(f"Downloaded file size: {file_size}")
+
+                if file_size <= TELEGRAM_UPLOAD_LIMIT:
+                    if send_video_with_retries(file_path, message.chat.id):
+                        os.remove(file_path)
+                        logging.debug(f"Deleted file after upload: {file_path}")
+                    else:
+                        logging.error("Failed to upload video after multiple attempts")
+                        bot.send_message(message.chat.id, "Failed to upload video after multiple attempts.")
+                else:
+                    send_download_button(message.chat.id, file_name, "original", message.chat.id)
+                    threading.Thread(target=delete_file_after_delay, args=(file_path, message.chat.id)).start()
+            else:
+                logging.error(f"File not found: {file_path}")
+                bot.send_message(message.chat.id, "Failed to download video. File not found after download.")
+        else:
+            logging.error(f"Failed to download video: {response.status_code}")
+            bot.send_message(message.chat.id, "Failed to download video from Instagram.")
+    except Exception as e:
+        logging.error(f"Error downloading Instagram video: {e}")
+        bot.send_message(message.chat.id, f"Failed to download video. Error: {e}")
 
 def get_download_link(file_name, resolution, user_id):
     conn = connect_db()
