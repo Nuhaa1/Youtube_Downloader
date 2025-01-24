@@ -283,14 +283,11 @@ def handle_facebook_video(url, message):
         return
 
     try:
-        def sanitize_filename(title):
-            # Sanitize and truncate the filename to a safe length
-            title = re.sub(r'[\\/*?:"<>|]', "", title)
-            return title[:MAX_FILENAME_LENGTH]
+        logging.debug(f"Starting to download Facebook video: {url}")
 
         ydl_opts = {
             'format': 'best',
-            'outtmpl': f'{DOWNLOAD_PATH}{sanitize_filename("%(title)s")}.%(ext)s',
+            'outtmpl': f'{DOWNLOAD_PATH}%(title)s.%(ext)s',
             'cookiefile': COOKIES_PATH,  # Path to your cookies file
             'http_headers': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) Gecko/20100101 Firefox/98.0'
@@ -301,7 +298,9 @@ def handle_facebook_video(url, message):
 
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
-            file_path = ydl.prepare_filename(info)
+            sanitized_title = sanitize_filename(info['title'])
+            ext = info['ext']
+            file_path = os.path.join(DOWNLOAD_PATH, f"{sanitized_title}.{ext}")
             base_filepath, ext = os.path.splitext(file_path)
             unique_filepath = get_unique_filepath(base_filepath, ext)
 
@@ -335,15 +334,10 @@ def handle_facebook_video(url, message):
         logging.error(f"Error during video processing: {e}")
         bot.send_message(chat_id, f"Failed to download video. Error: {e}")
 
-# Helper function to truncate the file name
-def truncate_filename(filename, max_length):
-    if len(filename) > max_length:
-        name, ext = os.path.splitext(filename)
-        return name[:max_length - len(ext)] + ext
-    return filename
-
-# Example usage:
-# handle_facebook_video('https://www.facebook.com/watch/?v=7851753391602010', your_message_object)
+def sanitize_filename(title):
+    # Remove invalid and special characters
+    title = re.sub(r'[\\/*?:"<>|#]', "", title)
+    return title[:MAX_FILENAME_LENGTH]
 
 def get_download_link(file_name, resolution, user_id):
     conn = connect_db()
